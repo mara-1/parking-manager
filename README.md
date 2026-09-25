@@ -1,7 +1,7 @@
 # ParkingManager
 
-[![CI](https://github.com/<логин>/parking-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/<логин>/parking-manager/actions/workflows/ci.yml)
-[![Commit messages](https://github.com/<логин>/parking-manager/actions/workflows/commitlint.yml/badge.svg)](https://github.com/<логин>/parking-manager/actions/workflows/commitlint.yml)
+[![CI](https://github.com/mara-1/parking-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/mara-1/parking-manager/actions/workflows/ci.yml)
+[![Commit messages](https://github.com/mara-1/parking-manager/actions/workflows/commitlint.yml/badge.svg)](https://github.com/mara-1/parking-manager/actions/workflows/commitlint.yml)
 
 Десктоп-приложение для учёта и управления автомобильной парковкой.
 Курсовой проект по дисциплине «Конструирование программного обеспечения».
