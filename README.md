@@ -23,7 +23,7 @@ scripts/                     создание решения, сбор метр�
 ## Начало работы
 
 ```bash
-git clone https://github.com/<логин>/parking-manager.git
+git clone https://github.com/mara-1/parking-manager.git
 cd parking-manager
 git config core.hooksPath .githooks
 dotnet build
@@ -31,3 +31,5 @@ dotnet test
 ```
 
 Правила оформления коммитов, ветвления, слияния и релизов — в [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Перед каждым коммитом рекомендуется выполнять `dotnet format`.
