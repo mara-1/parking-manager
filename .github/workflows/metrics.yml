@@ -58,6 +58,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           STAGE: ${{ inputs.stage }}
+          PYTHONIOENCODING: utf-8
         run: python scripts/collect_metrics.py --build-log build.log --trx-dir TestResults --coverage coveragereport/Cobertura.xml --out metrics
 
       - name: Метрики в сводке запуска
