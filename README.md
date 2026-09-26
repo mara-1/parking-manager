@@ -1,7 +1,7 @@
 # ParkingManager
 
-[![CI](https://github.com/<логин>/parking-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/<логин>/parking-manager/actions/workflows/ci.yml)
-[![Commit messages](https://github.com/<логин>/parking-manager/actions/workflows/commitlint.yml/badge.svg)](https://github.com/<логин>/parking-manager/actions/workflows/commitlint.yml)
+[![CI](https://github.com/mara-1/parking-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/mara-1/parking-manager/actions/workflows/ci.yml)
+[![Commit messages](https://github.com/mara-1/parking-manager/actions/workflows/commitlint.yml/badge.svg)](https://github.com/mara-1/parking-manager/actions/workflows/commitlint.yml)
 
 Десктоп-приложение для учёта и управления автомобильной парковкой.
 Курсовой проект по дисциплине «Конструирование программного обеспечения».
@@ -23,7 +23,7 @@ scripts/                     создание решения, сбор метр�
 ## Начало работы
 
 ```bash
-git clone https://github.com/<логин>/parking-manager.git
+git clone https://github.com/mara-1/parking-manager.git
 cd parking-manager
 git config core.hooksPath .githooks
 dotnet build
@@ -31,3 +31,5 @@ dotnet test
 ```
 
 Правила оформления коммитов, ветвления, слияния и релизов — в [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Перед каждым коммитом рекомендуется выполнять `dotnet format`.
