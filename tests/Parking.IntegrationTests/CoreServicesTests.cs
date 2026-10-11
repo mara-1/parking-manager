@@ -4,6 +4,10 @@ using Parking.Core.DataAccess;
 
 namespace Parking.IntegrationTests;
 
+[Trait("Category", "Integration")]
+[Trait("Task", "2")]
+[Trait("Task", "5")]
+[Trait("Task", "7")]
 public sealed class CoreServicesTests : IDisposable
 {
     private readonly string _databasePath = Path.Combine(Path.GetTempPath(), $"parking-test-{Guid.NewGuid():N}.db");

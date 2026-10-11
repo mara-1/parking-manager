@@ -4,6 +4,8 @@ using Parking.Core.Tests.Fakes;
 
 namespace Parking.Core.Tests;
 
+[Trait("Category", "Unit")]
+[Trait("Task", "7")]
 public class ParkingServiceTests
 {
     private readonly FakeParkingSpotRepository _repository = new FakeParkingSpotRepository(3);

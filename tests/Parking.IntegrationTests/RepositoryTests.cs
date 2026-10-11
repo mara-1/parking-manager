@@ -3,6 +3,8 @@ using Parking.Core.Models;
 
 namespace Parking.IntegrationTests;
 
+[Trait("Category", "Integration")]
+[Trait("Task", "3")]
 public sealed class RepositoryTests : IDisposable
 {
     private readonly SqliteTestDatabase _database = new SqliteTestDatabase();
@@ -13,6 +15,7 @@ public sealed class RepositoryTests : IDisposable
     }
 
     [Fact]
+    [Trait("Task", "5")]
     public void OperatorRepository_FindByLogin_ReturnsSeededOperator()
     {
         var repository = new OperatorRepository(_database.Context);
@@ -24,6 +27,7 @@ public sealed class RepositoryTests : IDisposable
     }
 
     [Fact]
+    [Trait("Task", "6")]
     public void ParkingSpotRepository_Update_PersistsChanges()
     {
         var repository = new ParkingSpotRepository(_database.Context);
