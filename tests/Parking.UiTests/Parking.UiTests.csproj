@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Автоматизированные тесты от лица пользователя (E2E).
+       FlaUI запускает собранное приложение ParkingManager.exe и управляет
+       им через Microsoft UI Automation: вводит текст, нажимает кнопки,
+       читает надписи на экране — так же, как это делает оператор. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Ссылка только задаёт порядок сборки: приложение должно быть собрано
+         до запуска тестов. Сборка приложения в тесты не подключается. -->
+    <ProjectReference Include="..\..\src\ParkingManager\ParkingManager.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>
