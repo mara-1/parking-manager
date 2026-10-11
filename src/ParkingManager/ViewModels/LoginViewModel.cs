@@ -21,13 +21,25 @@ public sealed class LoginViewModel : ViewModelBase
     public string Login
     {
         get => _login;
-        set => SetProperty(ref _login, value);
+        set
+        {
+            if (SetProperty(ref _login, value))
+            {
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
     }
 
     public string Password
     {
         get => _password;
-        set => SetProperty(ref _password, value);
+        set
+        {
+            if (SetProperty(ref _password, value))
+            {
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
     }
 
     public string ErrorMessage
