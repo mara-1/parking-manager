@@ -2,6 +2,8 @@ using Parking.Core.Services;
 
 namespace Parking.Core.Tests;
 
+[Trait("Category", "Unit")]
+[Trait("Task", "5")]
 public class PasswordHasherTests
 {
     [Fact]

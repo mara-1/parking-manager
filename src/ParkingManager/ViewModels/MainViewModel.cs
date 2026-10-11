@@ -31,13 +31,25 @@ public sealed class MainViewModel : ViewModelBase
     public SpotViewModel? SelectedSpot
     {
         get => _selectedSpot;
-        set => SetProperty(ref _selectedSpot, value);
+        set
+        {
+            if (SetProperty(ref _selectedSpot, value))
+            {
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
     }
 
     public string CarNumber
     {
         get => _carNumber;
-        set => SetProperty(ref _carNumber, value);
+        set
+        {
+            if (SetProperty(ref _carNumber, value))
+            {
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
     }
 
     public string StatusMessage

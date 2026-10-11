@@ -12,16 +12,16 @@
     <TextBlock Text="Вход оператора" Foreground="Gray" Margin="0,4,0,16" />
 
     <TextBlock Text="Логин" />
-    <TextBox x:Name="LoginBox" Text="{Binding Login, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,12" Padding="4" />
+    <TextBox x:Name="LoginBox" AutomationProperties.AutomationId="LoginBox" Text="{Binding Login, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,12" Padding="4" />
 
     <TextBlock Text="Пароль" />
-    <PasswordBox x:Name="PasswordInput" PasswordChanged="OnPasswordChanged" Margin="0,4,0,12" Padding="4" />
+    <PasswordBox x:Name="PasswordInput" AutomationProperties.AutomationId="PasswordInput" PasswordChanged="OnPasswordChanged" Margin="0,4,0,12" Padding="4" />
 
-    <TextBlock Text="{Binding ErrorMessage}" Foreground="Firebrick" TextWrapping="Wrap" Margin="0,0,0,12" />
+    <TextBlock AutomationProperties.AutomationId="ErrorText" Text="{Binding ErrorMessage}" Foreground="Firebrick" TextWrapping="Wrap" Margin="0,0,0,12" />
 
     <DockPanel>
       <TextBlock DockPanel.Dock="Left" Text="Демо: admin / admin123" Foreground="Gray" VerticalAlignment="Center" />
-      <Button Content="Войти" Command="{Binding LoginCommand}" IsDefault="True" Padding="16,6" HorizontalAlignment="Right" />
+      <Button AutomationProperties.AutomationId="LoginButton" Content="Войти" Command="{Binding LoginCommand}" IsDefault="True" Padding="16,6" HorizontalAlignment="Right" />
     </DockPanel>
   </StackPanel>
 </Window>

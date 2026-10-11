@@ -2,6 +2,9 @@ using Parking.Core.DataAccess;
 
 namespace Parking.IntegrationTests;
 
+[Trait("Category", "Integration")]
+[Trait("Task", "3")]
+[Trait("Task", "6")]
 public sealed class DatabaseInitializerTests : IDisposable
 {
     private readonly SqliteTestDatabase _database = new SqliteTestDatabase();

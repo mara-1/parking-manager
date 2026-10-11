@@ -12,30 +12,39 @@
   <DockPanel Margin="16">
     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
       <TextBlock Text="Оператор: " FontWeight="SemiBold" />
-      <TextBlock Text="{Binding OperatorName}" Margin="0,0,24,0" />
+      <TextBlock AutomationProperties.AutomationId="OperatorNameText" Text="{Binding OperatorName}" Margin="0,0,24,0" />
       <TextBlock Text="Свободно: " />
-      <TextBlock Text="{Binding FreeCount}" FontWeight="SemiBold" Margin="0,0,16,0" />
+      <TextBlock AutomationProperties.AutomationId="FreeCountText" Text="{Binding FreeCount}" FontWeight="SemiBold" Margin="0,0,16,0" />
       <TextBlock Text="Занято: " />
-      <TextBlock Text="{Binding OccupiedCount}" FontWeight="SemiBold" />
+      <TextBlock AutomationProperties.AutomationId="OccupiedCountText" Text="{Binding OccupiedCount}" FontWeight="SemiBold" />
     </StackPanel>
 
-    <TextBlock DockPanel.Dock="Bottom" Text="{Binding StatusMessage}" Foreground="DimGray" Margin="0,12,0,0" />
+    <TextBlock DockPanel.Dock="Bottom" AutomationProperties.AutomationId="StatusMessageText" Text="{Binding StatusMessage}" Foreground="DimGray" Margin="0,12,0,0" />
 
     <StackPanel DockPanel.Dock="Right" Width="240" Margin="16,0,0,0">
       <TextBlock Text="Выбранное место" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
-      <TextBlock Text="{Binding SelectedSpot.Number, FallbackValue=не выбрано}" FontSize="22" />
-      <TextBlock Text="{Binding SelectedSpot.StatusText}" Foreground="Gray" Margin="0,0,0,16" />
+      <TextBlock AutomationProperties.AutomationId="SelectedSpotNumberText" Text="{Binding SelectedSpot.Number, FallbackValue=не выбрано}" FontSize="22" />
+      <TextBlock AutomationProperties.AutomationId="SelectedSpotStatusText" Text="{Binding SelectedSpot.StatusText}" Foreground="Gray" Margin="0,0,0,16" />
 
       <TextBlock Text="Номер автомобиля" />
-      <TextBox Text="{Binding CarNumber, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,8" Padding="4" />
+      <TextBox AutomationProperties.AutomationId="CarNumberBox" Text="{Binding CarNumber, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,8" Padding="4" />
 
-      <Button Content="Зарегистрировать въезд" Command="{Binding RegisterEntryCommand}" Padding="8,6" Margin="0,0,0,8" />
-      <Button Content="Зарегистрировать выезд" Command="{Binding RegisterExitCommand}" Padding="8,6" />
+      <Button AutomationProperties.AutomationId="EntryButton" Content="Зарегистрировать въезд" Command="{Binding RegisterEntryCommand}" Padding="8,6" Margin="0,0,0,8" />
+      <Button AutomationProperties.AutomationId="ExitButton" Content="Зарегистрировать выезд" Command="{Binding RegisterExitCommand}" Padding="8,6" />
     </StackPanel>
 
-    <ListBox ItemsSource="{Binding Spots}"
+    <ListBox AutomationProperties.AutomationId="SpotsList"
+             ItemsSource="{Binding Spots}"
              SelectedItem="{Binding SelectedSpot}"
              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+      <!-- Идентификатор каждого места (Spot_A-01 и т. д.) нужен UI-тестам -->
+      <ListBox.ItemContainerStyle>
+        <Style TargetType="ListBoxItem">
+          <Setter Property="AutomationProperties.AutomationId" Value="{Binding Number, StringFormat='Spot_{0}'}" />
+          <Setter Property="AutomationProperties.Name" Value="{Binding Number}" />
+          <Setter Property="AutomationProperties.HelpText" Value="{Binding Details}" />
+        </Style>
+      </ListBox.ItemContainerStyle>
       <ListBox.ItemsPanel>
         <ItemsPanelTemplate>
           <WrapPanel />
