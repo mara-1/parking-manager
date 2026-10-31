@@ -8,24 +8,33 @@ public class ParkingService : IParkingService
     private readonly ICategoryRepository _categories;
     private readonly ISessionRepository _sessions;
     private readonly ITariffRepository _tariffs;
+    private readonly IBookingRepository _bookings;
     private readonly TimeProvider _timeProvider;
 
-    public ParkingService(ICategoryRepository categories, ISessionRepository sessions, ITariffRepository tariffs, TimeProvider timeProvider)
+    public ParkingService(
+        ICategoryRepository categories,
+        ISessionRepository sessions,
+        ITariffRepository tariffs,
+        IBookingRepository bookings,
+        TimeProvider timeProvider)
     {
         _categories = categories ?? throw new ArgumentNullException(nameof(categories));
         _sessions = sessions ?? throw new ArgumentNullException(nameof(sessions));
         _tariffs = tariffs ?? throw new ArgumentNullException(nameof(tariffs));
+        _bookings = bookings ?? throw new ArgumentNullException(nameof(bookings));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
     }
 
     public IReadOnlyList<OccupancyInfo> GetOccupancy()
     {
+        BookingRules.ExpireNoShows(_bookings, Now());
         return _categories.GetAll()
             .Select(c => new OccupancyInfo
             {
                 Category = c.Category,
                 Capacity = c.Capacity,
                 Occupied = _sessions.CountActive(c.Category),
+                Booked = _bookings.CountWaiting(c.Category),
             })
             .ToList();
     }
@@ -53,9 +62,20 @@ public class ParkingService : IParkingService
             throw new ParkingOperationException($"Автомобиль {normalized} уже находится на парковке.");
         }
 
+        var now = Now();
+        BookingRules.ExpireNoShows(_bookings, now);
+
+        // Автомобиль с бронью занимает удержанное для него место своей категории.
+        var booking = _bookings.FindWaitingByCarNumber(normalized);
+        if (booking is not null)
+        {
+            category = booking.Category;
+        }
+
         var capacity = _categories.Find(category)
             ?? throw new ParkingOperationException("Категория мест не настроена.");
-        if (_sessions.CountActive(category) >= capacity.Capacity)
+        var heldForOthers = _bookings.CountWaiting(category) - (booking is null ? 0 : 1);
+        if (_sessions.CountActive(category) + heldForOthers >= capacity.Capacity)
         {
             throw new ParkingOperationException($"Свободных мест нет ({category.ToDisplayName()}).");
         }
@@ -64,9 +84,17 @@ public class ParkingService : IParkingService
         {
             CarNumber = normalized,
             Category = category,
-            EntryTime = Now(),
+            EntryTime = now,
         };
         _sessions.Add(session);
+
+        if (booking is not null)
+        {
+            booking.Status = BookingStatus.Arrived;
+            booking.SessionId = session.Id;
+            _bookings.Update(booking);
+        }
+
         return session;
     }
 
@@ -110,10 +138,8 @@ public class ParkingService : IParkingService
         return TariffCalculator.Calculate(until - session.EntryTime, price);
     }
 
-    // Секунды отбрасываются: оператору и в отчётах нужна точность до минуты.
     private DateTime Now()
     {
-        var now = _timeProvider.GetLocalNow().DateTime;
-        return new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, now.Kind);
+        return ParkingClock.Now(_timeProvider);
     }
 }

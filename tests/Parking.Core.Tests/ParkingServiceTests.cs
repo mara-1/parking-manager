@@ -16,7 +16,7 @@ public class ParkingServiceTests
 
     public ParkingServiceTests()
     {
-        _service = new ParkingService(_categories, _sessions, _tariffs, _clock);
+        _service = new ParkingService(_categories, _sessions, _tariffs, new FakeBookingRepository(), _clock);
     }
 
     [Fact]

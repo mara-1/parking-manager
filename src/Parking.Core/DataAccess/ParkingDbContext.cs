@@ -18,6 +18,8 @@ public class ParkingDbContext : DbContext
 
     public DbSet<Tariff> Tariffs => Set<Tariff>();
 
+    public DbSet<Booking> Bookings => Set<Booking>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -37,5 +39,12 @@ public class ParkingDbContext : DbContext
         session.HasIndex(s => s.CarNumber);
         session.HasIndex(s => s.ExitTime);
         session.HasIndex(s => s.EntryTime);
+
+        var booking = modelBuilder.Entity<Booking>();
+        booking.Property(b => b.Category).HasConversion<string>();
+        booking.Property(b => b.Status).HasConversion<string>();
+        booking.Property(b => b.CarNumber).HasMaxLength(16);
+        booking.HasIndex(b => b.Status);
+        booking.HasIndex(b => b.ArrivalTime);
     }
 }

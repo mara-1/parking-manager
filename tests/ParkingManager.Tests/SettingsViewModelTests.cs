@@ -17,7 +17,7 @@ public class SettingsViewModelTests
     public SettingsViewModelTests()
     {
         var clock = new ManualTimeProvider(new DateTime(2026, 10, 24, 9, 0, 0));
-        var parking = new ParkingService(_categories, new FakeSessionRepository(), _tariffs, clock);
+        var parking = new ParkingService(_categories, new FakeSessionRepository(), _tariffs, new FakeBookingRepository(), clock);
         _viewModel = new SettingsViewModel(new SettingsService(_categories, _tariffs, parking));
     }
 

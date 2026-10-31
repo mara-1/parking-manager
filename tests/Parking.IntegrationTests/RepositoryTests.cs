@@ -118,6 +118,27 @@ public sealed class RepositoryTests : IDisposable
         Assert.Equal(75.5m, repository.Find(SpotCategory.Regular)!.PricePerHour);
     }
 
+    [Fact]
+    [Trait("Task", "9")]
+    public void BookingRepository_StatusAndPeriodQueries_Work()
+    {
+        var repository = new BookingRepository(_database.Context);
+        var waiting = new Booking { CarNumber = "Е777КХ73", Category = SpotCategory.Regular, ArrivalTime = new DateTime(2026, 10, 24, 18, 0, 0), Status = BookingStatus.Waiting };
+        repository.Add(waiting);
+        repository.Add(new Booking { CarNumber = "К300ТТ73", Category = SpotCategory.Regular, ArrivalTime = new DateTime(2026, 10, 24, 11, 0, 0), Status = BookingStatus.NoShow });
+        waiting.SessionId = 7;
+        repository.Update(waiting);
+        _database.Context.ChangeTracker.Clear();
+
+        Assert.Equal(1, repository.CountWaiting(SpotCategory.Regular));
+        Assert.Equal(7, repository.FindWaitingByCarNumber("Е777КХ73")!.SessionId);
+        Assert.Null(repository.FindWaitingByCarNumber("К300ТТ73"));
+        Assert.Collection(
+            repository.GetByArrivalPeriod(new DateTime(2026, 10, 24), new DateTime(2026, 10, 25)),
+            first => Assert.Equal(BookingStatus.NoShow, first.Status),
+            second => Assert.Equal("Е777КХ73", second.CarNumber));
+    }
+
     public void Dispose()
     {
         _database.Dispose();

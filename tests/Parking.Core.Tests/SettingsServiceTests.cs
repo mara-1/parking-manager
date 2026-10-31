@@ -16,7 +16,7 @@ public class SettingsServiceTests
     public SettingsServiceTests()
     {
         var clock = new ManualTimeProvider(new DateTime(2026, 10, 24, 9, 0, 0));
-        _parking = new ParkingService(_categories, new FakeSessionRepository(), _tariffs, clock);
+        _parking = new ParkingService(_categories, new FakeSessionRepository(), _tariffs, new FakeBookingRepository(), clock);
         _settings = new SettingsService(_categories, _tariffs, _parking);
     }
 

@@ -19,8 +19,14 @@ public class MainViewModelTests
         _authService.Login(FakeAuthService.ValidLogin, FakeAuthService.ValidPassword);
         var categories = new FakeCategoryRepository(regular: 3, disabled: 1);
         var tariffs = new FakeTariffRepository(regular: 60m, disabled: 0m);
-        var service = new ParkingService(categories, new FakeSessionRepository(), tariffs, _clock);
-        _viewModel = new MainViewModel(_authService, service, new SettingsService(categories, tariffs, service), _clock);
+        var bookings = new FakeBookingRepository();
+        var service = new ParkingService(categories, new FakeSessionRepository(), tariffs, bookings, _clock);
+        _viewModel = new MainViewModel(
+            _authService,
+            service,
+            new SettingsService(categories, tariffs, service),
+            new BookingService(bookings, service, _clock),
+            _clock);
     }
 
     [Fact]
@@ -86,15 +92,17 @@ public class MainViewModelTests
 
     [Fact]
     [Trait("Task", "6")]
-    public void RegisterEntryCommand_CategoryFull_CannotExecute()
+    public void RegisterEntry_CategoryFull_ShowsNoPlacesMessage()
     {
         _viewModel.IsDisabledCategory = true;
         _viewModel.CarNumber = "М808АА73";
         _viewModel.RegisterEntryCommand.Execute(null);
 
         _viewModel.CarNumber = "Н431ХА73";
+        _viewModel.RegisterEntryCommand.Execute(null);
 
-        Assert.False(_viewModel.RegisterEntryCommand.CanExecute(null));
+        Assert.Equal("Свободных мест нет (Места для инвалидов).", _viewModel.StatusMessage);
+        Assert.Equal(1, _viewModel.ActiveCount);
     }
 
     [Fact]
@@ -176,5 +184,20 @@ public class MainViewModelTests
 
         Assert.Equal("Настройки сохранены.", _viewModel.Settings.Message);
         Assert.Equal(9, _viewModel.RegularFree);
+    }
+
+    [Fact]
+    [Trait("Task", "9")]
+    public void BookingCreated_HoldsPlaceInCountersAndScheme()
+    {
+        _viewModel.Bookings.CarNumber = "Е777КХ73";
+        _viewModel.Bookings.ArrivalText = "10:00";
+
+        _viewModel.Bookings.CreateCommand.Execute(null);
+
+        Assert.Equal(2, _viewModel.RegularFree);
+        Assert.Equal(1, _viewModel.BookedCount);
+        var regular = _viewModel.Occupancy.Single(o => o.Category == SpotCategory.Regular);
+        Assert.Equal(CellState.Booked, regular.Cells[0]);
     }
 }

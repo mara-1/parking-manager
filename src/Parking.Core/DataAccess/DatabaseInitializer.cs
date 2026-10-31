@@ -14,8 +14,8 @@ public static class DatabaseInitializer
     public const decimal DisabledPricePerHour = 0m;
 
     // Версия схемы базы. Увеличивается при каждом изменении модели данных
-    // (2 — учёт по категориям, этап 3; 3 — тарифы, этап 4).
-    public const int SchemaVersion = 3;
+    // (2 — учёт по категориям, этап 3; 3 — тарифы; 4 — брони, этап 4).
+    public const int SchemaVersion = 4;
 
     public static void Initialize(ParkingDbContext dbContext)
     {
@@ -31,7 +31,7 @@ public static class DatabaseInitializer
         if (dbContext.Database.EnsureCreated())
         {
             // Число должно совпадать с SchemaVersion.
-            dbContext.Database.ExecuteSqlRaw("PRAGMA user_version = 3");
+            dbContext.Database.ExecuteSqlRaw("PRAGMA user_version = 4");
         }
 
         Seed(dbContext);
