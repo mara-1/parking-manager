@@ -15,7 +15,7 @@ public class HistoryViewModelTests
 
     public HistoryViewModelTests()
     {
-        _service = new ParkingService(new FakeCategoryRepository(regular: 10, disabled: 2), new FakeSessionRepository(), new FakeTariffRepository(), _clock);
+        _service = new ParkingService(new FakeCategoryRepository(regular: 10, disabled: 2), new FakeSessionRepository(), new FakeTariffRepository(), new FakeBookingRepository(), _clock);
     }
 
     [Fact]

@@ -29,6 +29,7 @@
     <Compile Include="..\Parking.Core.Tests\Fakes\FakeSessionRepository.cs" Link="Fakes\FakeSessionRepository.cs" />
     <Compile Include="..\Parking.Core.Tests\Fakes\ManualTimeProvider.cs" Link="Fakes\ManualTimeProvider.cs" />
     <Compile Include="..\Parking.Core.Tests\Fakes\FakeTariffRepository.cs" Link="Fakes\FakeTariffRepository.cs" />
+    <Compile Include="..\Parking.Core.Tests\Fakes\FakeBookingRepository.cs" Link="Fakes\FakeBookingRepository.cs" />
   </ItemGroup>
 
   <ItemGroup>

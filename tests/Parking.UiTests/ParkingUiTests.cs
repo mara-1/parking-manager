@@ -153,4 +153,35 @@ public class ParkingUiTests
         UiHelpers.WaitForText(parking, "DisabledFreeText", "60");
         UiHelpers.Screenshot(parking, "09-settings");
     }
+
+    [Fact]
+    [Trait("Task", "9")]
+    public void Booking_HoldsPlaceAndBookedCarEnters()
+    {
+        using var session = new AppSession();
+        var parking = session.LoginAsDemoOperator();
+        var now = DateTime.Now;
+        var arrival = now.AddMinutes(30).Date == now.Date ? now.AddMinutes(30) : now.Date.AddHours(23).AddMinutes(59);
+        var arrivalText = arrival.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+
+        // Бронь на обычное место: свободных становится на одно меньше.
+        UiHelpers.Select(parking, "BookingsTab");
+        UiHelpers.SetText(parking, "BookingCarNumberBox", "Е777КХ73");
+        UiHelpers.SetText(parking, "BookingTimeBox", arrivalText);
+        UiHelpers.ClickWhenEnabled(parking, "CreateBookingButton");
+
+        UiHelpers.WaitForText(parking, "BookingMessageText", $"Бронь создана: Е777КХ73 на {arrivalText}.");
+        UiHelpers.WaitForText(parking, "RegularFreeText", "449");
+        UiHelpers.WaitForText(parking, "BookedCountText", "1");
+        UiHelpers.Screenshot(parking, "10-bookings");
+
+        // Автомобиль с бронью заезжает на удержанное место: свободных по-прежнему 449.
+        UiHelpers.Select(parking, "SessionsTab");
+        UiHelpers.SetText(parking, "CarNumberBox", "Е777КХ73");
+        UiHelpers.ClickWhenEnabled(parking, "EntryButton");
+
+        UiHelpers.WaitForText(parking, "ActiveCountText", "1");
+        UiHelpers.WaitForText(parking, "BookedCountText", "0");
+        UiHelpers.WaitForText(parking, "RegularFreeText", "449");
+    }
 }
