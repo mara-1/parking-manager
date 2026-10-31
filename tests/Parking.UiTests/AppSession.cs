@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Definitions;
+using FlaUI.Core.Input;
 using FlaUI.Core.Tools;
 using FlaUI.UIA3;
 
@@ -94,6 +96,11 @@ public sealed class AppSession : IDisposable
         SubmitLogin(DemoLogin, DemoPassword);
         var parkingWindow = WaitForWindow(ParkingWindowTitle);
         UiHelpers.WaitForText(parkingWindow, "RegularFreeText", $"{RegularCapacity}");
+
+        // Экран раннера CI (1024 × 768) меньше окна: разворачиваем его,
+        // чтобы снимки экрана для документации были целыми.
+        parkingWindow.Patterns.Window.Pattern.SetWindowVisualState(WindowVisualState.Maximized);
+        Wait.UntilInputIsProcessed();
         return parkingWindow;
     }
 
