@@ -1,18 +1,24 @@
 using Parking.Core.DataAccess;
+using Parking.Core.Models;
 
 namespace Parking.IntegrationTests;
 
+[Trait("Category", "Integration")]
+[Trait("Task", "3")]
+[Trait("Task", "6")]
 public sealed class DatabaseInitializerTests : IDisposable
 {
     private readonly SqliteTestDatabase _database = new SqliteTestDatabase();
 
     [Fact]
-    public void Initialize_EmptyDatabase_SeedsDemoOperatorAndSpots()
+    public void Initialize_EmptyDatabase_SeedsDemoOperatorAndCapacities()
     {
         DatabaseInitializer.Initialize(_database.Context);
 
         Assert.Single(_database.Context.Operators);
-        Assert.Equal(DatabaseInitializer.DemoSpotCount, _database.Context.ParkingSpots.Count());
+        var categories = _database.Context.Categories.ToList();
+        Assert.Equal(DatabaseInitializer.RegularCapacity, categories.Single(c => c.Category == SpotCategory.Regular).Capacity);
+        Assert.Equal(DatabaseInitializer.DisabledCapacity, categories.Single(c => c.Category == SpotCategory.Disabled).Capacity);
     }
 
     [Fact]
@@ -22,7 +28,7 @@ public sealed class DatabaseInitializerTests : IDisposable
         DatabaseInitializer.Initialize(_database.Context);
 
         Assert.Single(_database.Context.Operators);
-        Assert.Equal(DatabaseInitializer.DemoSpotCount, _database.Context.ParkingSpots.Count());
+        Assert.Equal(2, _database.Context.Categories.Count());
     }
 
     public void Dispose()

@@ -3,6 +3,8 @@ using Parking.Core.Tests.Fakes;
 
 namespace Parking.Core.Tests;
 
+[Trait("Category", "Unit")]
+[Trait("Task", "5")]
 public class AuthServiceTests
 {
     private readonly FakeOperatorRepository _repository = new FakeOperatorRepository();

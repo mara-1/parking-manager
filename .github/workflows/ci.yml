@@ -1,4 +1,5 @@
-# Непрерывная интеграция: линтеры -> тесты с покрытием -> сборка артефакта.
+# Непрерывная интеграция: линтеры -> тесты с покрытием и UI-тесты ->
+# сводный отчёт о тестировании -> сборка артефакта.
 # Запускается при каждом push и при каждом pull request в main/develop.
 name: CI
 
@@ -57,8 +58,9 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      # UI-тесты (Category=UI) запускаются отдельной задачей ui-test.
       - name: Модульные и интеграционные тесты с покрытием
-        run: dotnet test -c Release --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
+        run: dotnet test -c Release --filter "Category!=UI" --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
 
       - name: Отчёт о покрытии кода
         if: always()
@@ -66,7 +68,7 @@ jobs:
         with:
           reports: TestResults/**/coverage.cobertura.xml
           targetdir: coveragereport
-          reporttypes: HtmlInline;Cobertura;MarkdownSummaryGithub
+          reporttypes: HtmlInline;Cobertura;MarkdownSummaryGithub;Badges
 
       - name: Покрытие в сводке запуска
         if: always()
@@ -81,6 +83,58 @@ jobs:
           path: |
             TestResults/**/*.trx
             coveragereport
+
+  ui-test:
+    name: ui-test
+    needs: lint
+    runs-on: windows-latest   # раннер Windows с рабочим столом: FlaUI управляет окнами приложения
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Сборка приложения и UI-тестов
+        run: dotnet build tests/Parking.UiTests -c Release
+
+      - name: Автоматизированные тесты от лица пользователя (FlaUI)
+        env:
+          UI_SCREENSHOTS_DIR: ${{ github.workspace }}\TestResults\screenshots
+        run: dotnet test tests/Parking.UiTests -c Release --no-build --logger trx --results-directory TestResults
+
+      - name: Сохранение результатов и снимков экрана
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: TestResults
+
+  report:
+    name: report
+    needs: [test, ui-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Загрузка результатов всех тестов
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*test-results'
+          path: results
+
+      - name: Сводный отчёт о тестировании
+        run: >
+          python3 scripts/test_report.py
+          --results results --sources tests --tasks tests/tasks.json
+          --out test-report/test-report.md --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Сохранение отчёта
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: test-report
 
   build:
     name: build

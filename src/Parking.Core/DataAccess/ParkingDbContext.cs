@@ -12,14 +12,25 @@ public class ParkingDbContext : DbContext
 
     public DbSet<OperatorAccount> Operators => Set<OperatorAccount>();
 
-    public DbSet<ParkingSpot> ParkingSpots => Set<ParkingSpot>();
+    public DbSet<CategoryCapacity> Categories => Set<CategoryCapacity>();
+
+    public DbSet<ParkingSession> Sessions => Set<ParkingSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
         modelBuilder.Entity<OperatorAccount>().HasIndex(o => o.Login).IsUnique();
-        modelBuilder.Entity<ParkingSpot>().HasIndex(s => s.Number).IsUnique();
-        modelBuilder.Entity<ParkingSpot>().Property(s => s.Status).HasConversion<string>();
+
+        modelBuilder.Entity<CategoryCapacity>().HasKey(c => c.Category);
+        modelBuilder.Entity<CategoryCapacity>().Property(c => c.Category).HasConversion<string>();
+
+        var session = modelBuilder.Entity<ParkingSession>();
+        session.Property(s => s.Category).HasConversion<string>();
+        session.Property(s => s.CarNumber).HasMaxLength(16);
+        session.Ignore(s => s.IsActive);
+        session.HasIndex(s => s.CarNumber);
+        session.HasIndex(s => s.ExitTime);
+        session.HasIndex(s => s.EntryTime);
     }
 }

@@ -1,19 +1,20 @@
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
-using Parking.Core.Models;
+using ParkingManager.ViewModels;
 
 namespace ParkingManager.Converters;
 
-public sealed class SpotStatusToBrushConverter : IValueConverter
+// Цвет квадратика на схеме занятости: занято — красный, бронь — оранжевый, свободно — зелёный.
+public sealed class CellStateToBrushConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
         return value switch
         {
-            SpotStatus.Free => Brushes.LightGreen,
-            SpotStatus.Occupied => Brushes.IndianRed,
-            SpotStatus.Booked => Brushes.Gold,
+            CellState.Occupied => Brushes.IndianRed,
+            CellState.Booked => Brushes.Orange,
+            CellState.Free => Brushes.LightGreen,
             _ => Brushes.LightGray,
         };
     }

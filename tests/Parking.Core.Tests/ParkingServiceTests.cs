@@ -4,74 +4,177 @@ using Parking.Core.Tests.Fakes;
 
 namespace Parking.Core.Tests;
 
+[Trait("Category", "Unit")]
+[Trait("Task", "7")]
 public class ParkingServiceTests
 {
-    private readonly FakeParkingSpotRepository _repository = new FakeParkingSpotRepository(3);
+    private readonly FakeCategoryRepository _categories = new FakeCategoryRepository(regular: 2, disabled: 1);
+    private readonly FakeSessionRepository _sessions = new FakeSessionRepository();
+    private readonly ManualTimeProvider _clock = new ManualTimeProvider(new DateTime(2026, 10, 24, 9, 15, 30));
     private readonly ParkingService _service;
 
     public ParkingServiceTests()
     {
-        _service = new ParkingService(_repository);
+        _service = new ParkingService(_categories, _sessions, _clock);
     }
 
     [Fact]
-    public void RegisterEntry_FreeSpot_OccupiesSpotWithNormalizedNumber()
+    public void RegisterEntry_ValidNumber_CreatesActiveSessionWithEntryTime()
     {
-        _service.RegisterEntry(1, " а123вс73 ");
+        var session = _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
 
-        var spot = _repository.GetById(1)!;
-        Assert.Equal(SpotStatus.Occupied, spot.Status);
-        Assert.Equal("А123ВС73", spot.CarNumber);
-        Assert.NotNull(spot.OccupiedSince);
-        Assert.Equal(1, _repository.UpdateCount);
+        Assert.True(session.IsActive);
+        Assert.Equal("А123ВС73", session.CarNumber);
+        Assert.Equal(SpotCategory.Regular, session.Category);
+        Assert.Equal(new DateTime(2026, 10, 24, 9, 15, 0), session.EntryTime);
+        Assert.Equal(1, _sessions.SaveCount);
     }
 
     [Fact]
-    public void RegisterEntry_OccupiedSpot_Throws()
+    public void RegisterEntry_LatinLettersAndSpaces_StoresNormalizedNumber()
     {
-        _service.RegisterEntry(1, "А123ВС73");
+        var session = _service.RegisterEntry(" a 123 bc 73 ", SpotCategory.Regular);
 
-        Assert.Throws<InvalidOperationException>(() => _service.RegisterEntry(1, "В456ОР73"));
-    }
-
-    [Fact]
-    public void RegisterEntry_CarAlreadyParked_Throws()
-    {
-        _service.RegisterEntry(1, "А123ВС73");
-
-        Assert.Throws<InvalidOperationException>(() => _service.RegisterEntry(2, "А123ВС73"));
+        Assert.Equal("А123ВС73", session.CarNumber);
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void RegisterEntry_EmptyCarNumber_Throws(string carNumber)
+    [InlineData("12345")]
+    [InlineData("А12ВС73")]
+    public void RegisterEntry_EmptyOrWrongNumber_Throws(string carNumber)
     {
-        Assert.Throws<ArgumentException>(() => _service.RegisterEntry(1, carNumber));
+        Assert.Throws<ParkingOperationException>(() => _service.RegisterEntry(carNumber, SpotCategory.Regular));
+        Assert.Empty(_sessions.All);
     }
 
     [Fact]
-    public void RegisterExit_OccupiedSpot_FreesSpot()
+    public void RegisterEntry_CarAlreadyParked_Throws()
     {
-        _service.RegisterEntry(1, "А123ВС73");
+        _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
 
-        _service.RegisterExit(1);
-
-        var spot = _repository.GetById(1)!;
-        Assert.Equal(SpotStatus.Free, spot.Status);
-        Assert.Null(spot.CarNumber);
-        Assert.Null(spot.OccupiedSince);
+        var error = Assert.Throws<ParkingOperationException>(() => _service.RegisterEntry("а123вс73", SpotCategory.Regular));
+        Assert.Equal("Автомобиль А123ВС73 уже находится на парковке.", error.Message);
     }
 
     [Fact]
-    public void RegisterExit_FreeSpot_Throws()
+    [Trait("Task", "6")]
+    public void RegisterEntry_NoFreeSpotsInCategory_Throws()
     {
-        Assert.Throws<InvalidOperationException>(() => _service.RegisterExit(1));
+        _service.RegisterEntry("А111АА73", SpotCategory.Regular);
+        _service.RegisterEntry("В222ВВ73", SpotCategory.Regular);
+
+        var error = Assert.Throws<ParkingOperationException>(() => _service.RegisterEntry("Е333ЕЕ73", SpotCategory.Regular));
+        Assert.Equal("Свободных мест нет (Обычные места).", error.Message);
     }
 
     [Fact]
-    public void RegisterEntry_UnknownSpot_Throws()
+    [Trait("Task", "6")]
+    public void RegisterEntry_DisabledPlacesFull_DoesNotUseRegularPlaces()
     {
-        Assert.Throws<InvalidOperationException>(() => _service.RegisterEntry(99, "А123ВС73"));
+        _service.RegisterEntry("А111АА73", SpotCategory.Disabled);
+
+        Assert.Throws<ParkingOperationException>(() => _service.RegisterEntry("В222ВВ73", SpotCategory.Disabled));
+        Assert.Equal(2, _service.GetOccupancy().Single(o => o.Category == SpotCategory.Regular).Free);
+    }
+
+    [Fact]
+    public void RegisterExit_ActiveSession_SetsExitTime()
+    {
+        var session = _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
+        _clock.Advance(TimeSpan.FromMinutes(95));
+
+        var finished = _service.RegisterExit(session.Id);
+
+        Assert.False(finished.IsActive);
+        Assert.Equal(new DateTime(2026, 10, 24, 10, 50, 0), finished.ExitTime);
+    }
+
+    [Fact]
+    public void RegisterExit_AlreadyFinished_Throws()
+    {
+        var session = _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
+        _service.RegisterExit(session.Id);
+
+        Assert.Throws<ParkingOperationException>(() => _service.RegisterExit(session.Id));
+    }
+
+    [Fact]
+    public void RegisterExit_UnknownSession_Throws()
+    {
+        Assert.Throws<ParkingOperationException>(() => _service.RegisterExit(99));
+    }
+
+    [Fact]
+    public void RegisterEntry_SameCarAfterExit_IsAllowed()
+    {
+        var first = _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
+        _service.RegisterExit(first.Id);
+
+        var second = _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
+
+        Assert.True(second.IsActive);
+        Assert.NotEqual(first.Id, second.Id);
+    }
+
+    [Fact]
+    [Trait("Task", "6")]
+    public void GetOccupancy_CountsActiveSessionsPerCategory()
+    {
+        _service.RegisterEntry("А111АА73", SpotCategory.Regular);
+        _service.RegisterEntry("В222ВВ73", SpotCategory.Disabled);
+
+        var occupancy = _service.GetOccupancy();
+
+        var regular = occupancy.Single(o => o.Category == SpotCategory.Regular);
+        var disabled = occupancy.Single(o => o.Category == SpotCategory.Disabled);
+        Assert.Equal((2, 1, 1), (regular.Capacity, regular.Occupied, regular.Free));
+        Assert.Equal((1, 1, 0), (disabled.Capacity, disabled.Occupied, disabled.Free));
+    }
+
+    [Fact]
+    [Trait("Task", "6")]
+    public void GetOccupancy_AfterExit_FreesPlace()
+    {
+        var session = _service.RegisterEntry("А111АА73", SpotCategory.Regular);
+
+        _service.RegisterExit(session.Id);
+
+        Assert.Equal(2, _service.GetOccupancy().Single(o => o.Category == SpotCategory.Regular).Free);
+    }
+
+    [Fact]
+    public void GetActiveSessions_PartOfNumber_ReturnsMatchingCarsOnly()
+    {
+        _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
+        _service.RegisterEntry("Х777ХХ73", SpotCategory.Regular);
+
+        var found = _service.GetActiveSessions("777");
+
+        Assert.Equal("Х777ХХ73", Assert.Single(found).CarNumber);
+        Assert.Equal(2, _service.GetActiveSessions(string.Empty).Count);
+    }
+
+    [Fact]
+    public void GetHistory_Period_ReturnsActiveAndFinishedSessionsWithEntryInPeriod()
+    {
+        var first = _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
+        _service.RegisterExit(first.Id);
+        _clock.Advance(TimeSpan.FromDays(1));
+        _service.RegisterEntry("Х777ХХ73", SpotCategory.Regular);
+
+        var day1 = _service.GetHistory(new DateTime(2026, 10, 24), new DateTime(2026, 10, 25), string.Empty);
+        var bothDays = _service.GetHistory(new DateTime(2026, 10, 24), new DateTime(2026, 10, 26), string.Empty);
+
+        Assert.Equal("А123ВС73", Assert.Single(day1).CarNumber);
+        Assert.Equal(2, bothDays.Count);
+    }
+
+    [Fact]
+    public void GetHistory_EndBeforeStart_Throws()
+    {
+        Assert.Throws<ParkingOperationException>(
+            () => _service.GetHistory(new DateTime(2026, 10, 25), new DateTime(2026, 10, 24), string.Empty));
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Parking.Core.Models;
 using Parking.Core.Services;
 
@@ -7,11 +8,20 @@ public static class DatabaseInitializer
 {
     public const string DemoLogin = "admin";
     public const string DemoPassword = "admin123";
-    public const int DemoSpotCount = 20;
+    public const int RegularCapacity = 450;
+    public const int DisabledCapacity = 50;
 
     public static void Initialize(ParkingDbContext dbContext)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
+
+        // База прототипа (этап 2) хранила конкретные места в таблице ParkingSpots.
+        // Её схема несовместима с учётом по категориям, а данные демонстрационные,
+        // поэтому такая база пересоздаётся.
+        if (TableExists(dbContext, "ParkingSpots"))
+        {
+            dbContext.Database.EnsureDeleted();
+        }
 
         dbContext.Database.EnsureCreated();
 
@@ -27,14 +37,20 @@ public static class DatabaseInitializer
             });
         }
 
-        if (!dbContext.ParkingSpots.Any())
+        if (!dbContext.Categories.Any())
         {
-            for (var i = 1; i <= DemoSpotCount; i++)
-            {
-                dbContext.ParkingSpots.Add(new ParkingSpot { Number = $"A-{i:D2}", Status = SpotStatus.Free });
-            }
+            dbContext.Categories.Add(new CategoryCapacity { Category = SpotCategory.Regular, Capacity = RegularCapacity });
+            dbContext.Categories.Add(new CategoryCapacity { Category = SpotCategory.Disabled, Capacity = DisabledCapacity });
         }
 
         dbContext.SaveChanges();
+    }
+
+    private static bool TableExists(ParkingDbContext dbContext, string tableName)
+    {
+        return dbContext.Database
+            .SqlQuery<int>($"SELECT COUNT(*) AS \"Value\" FROM sqlite_master WHERE type = 'table' AND name = {tableName}")
+            .AsEnumerable()
+            .Single() > 0;
     }
 }

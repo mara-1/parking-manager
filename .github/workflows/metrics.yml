@@ -44,7 +44,7 @@ jobs:
 
       - name: Тесты с покрытием
         continue-on-error: true   # упавшие тесты тоже являются метрикой
-        run: dotnet test -c Release --no-build --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
+        run: dotnet test -c Release --no-build --filter "Category!=UI" --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
 
       - name: Объединение отчётов о покрытии
         uses: danielpalme/ReportGenerator-GitHub-Action@5

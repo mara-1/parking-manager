@@ -4,9 +4,16 @@ namespace Parking.Core.Services;
 
 public interface IParkingService
 {
-    IReadOnlyList<ParkingSpot> GetSpots();
+    // Вместимость и занятость по каждой категории мест.
+    IReadOnlyList<OccupancyInfo> GetOccupancy();
 
-    void RegisterEntry(int spotId, string carNumber);
+    // Автомобили на парковке; carNumberPart — часть номера для поиска или пустая строка.
+    IReadOnlyList<ParkingSession> GetActiveSessions(string carNumberPart);
 
-    void RegisterExit(int spotId);
+    ParkingSession RegisterEntry(string carNumber, SpotCategory category);
+
+    ParkingSession RegisterExit(int sessionId);
+
+    // История: стоянки с въездом в периоде [from, to), включая ещё не завершённые.
+    IReadOnlyList<ParkingSession> GetHistory(DateTime from, DateTime to, string carNumberPart);
 }
