@@ -18,7 +18,7 @@ public sealed class MainViewModel : ViewModelBase
     private string _searchText = string.Empty;
     private string _statusMessage = string.Empty;
 
-    public MainViewModel(IAuthService authService, IParkingService parkingService, TimeProvider timeProvider)
+    public MainViewModel(IAuthService authService, IParkingService parkingService, ISettingsService settingsService, TimeProvider timeProvider)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _parkingService = parkingService ?? throw new ArgumentNullException(nameof(parkingService));
@@ -27,6 +27,8 @@ public sealed class MainViewModel : ViewModelBase
         Occupancy = new ObservableCollection<OccupancyViewModel>();
         Sessions = new ObservableCollection<SessionViewModel>();
         History = new HistoryViewModel(parkingService, timeProvider);
+        Settings = new SettingsViewModel(settingsService);
+        Settings.Saved += (sender, args) => Refresh(null);
         RegisterEntryCommand = new RelayCommand(RegisterEntry, CanRegisterEntry);
         RegisterExitCommand = new RelayCommand(RegisterExit, CanRegisterExit);
         Refresh(null);
@@ -39,6 +41,8 @@ public sealed class MainViewModel : ViewModelBase
     public ObservableCollection<SessionViewModel> Sessions { get; }
 
     public HistoryViewModel History { get; }
+
+    public SettingsViewModel Settings { get; }
 
     public int RegularFree => FreeOf(SpotCategory.Regular);
 
@@ -121,6 +125,21 @@ public sealed class MainViewModel : ViewModelBase
 
     public ICommand RegisterExitCommand { get; }
 
+    // Перечитывает занятость и список; вызывается после операций и по таймеру окна.
+    public void Refresh(int? selectSessionId)
+    {
+        Occupancy.Clear();
+        foreach (var info in _parkingService.GetOccupancy())
+        {
+            Occupancy.Add(new OccupancyViewModel(info));
+        }
+
+        OnPropertyChanged(nameof(RegularFree));
+        OnPropertyChanged(nameof(DisabledFree));
+        OnPropertyChanged(nameof(ActiveCount));
+        LoadSessions(selectSessionId);
+    }
+
     private void SetEntryCategory(SpotCategory category)
     {
         if (_entryCategory == category)
@@ -140,20 +159,6 @@ public sealed class MainViewModel : ViewModelBase
         return Occupancy.FirstOrDefault(o => o.Category == category)?.Free ?? 0;
     }
 
-    private void Refresh(int? selectSessionId)
-    {
-        Occupancy.Clear();
-        foreach (var info in _parkingService.GetOccupancy())
-        {
-            Occupancy.Add(new OccupancyViewModel(info));
-        }
-
-        OnPropertyChanged(nameof(RegularFree));
-        OnPropertyChanged(nameof(DisabledFree));
-        OnPropertyChanged(nameof(ActiveCount));
-        LoadSessions(selectSessionId);
-    }
-
     private void LoadSessions(int? selectSessionId)
     {
         var keepId = selectSessionId ?? SelectedSession?.Id;
@@ -162,7 +167,7 @@ public sealed class MainViewModel : ViewModelBase
         Sessions.Clear();
         foreach (var session in _parkingService.GetActiveSessions(SearchText))
         {
-            Sessions.Add(new SessionViewModel(session, now));
+            Sessions.Add(new SessionViewModel(session, now, _parkingService.CalculateAmount(session)));
         }
 
         SelectedSession = Sessions.FirstOrDefault(s => s.Id == keepId)
@@ -206,7 +211,7 @@ public sealed class MainViewModel : ViewModelBase
         try
         {
             var session = _parkingService.RegisterExit(selected.Id);
-            StatusMessage = $"Выезд зарегистрирован: {session.CarNumber}.";
+            StatusMessage = $"Выезд зарегистрирован: {session.CarNumber}, к оплате {MoneyFormat.Format(session.Amount ?? 0m)}.";
             Refresh(null);
         }
         catch (ParkingOperationException ex)
