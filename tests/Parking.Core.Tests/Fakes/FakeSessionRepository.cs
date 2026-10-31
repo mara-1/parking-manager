@@ -49,10 +49,10 @@ public class FakeSessionRepository : ISessionRepository
             .ToList();
     }
 
-    public IReadOnlyList<ParkingSession> GetByEntryPeriod(DateTime from, DateTime to, string carNumberPart)
+    public IReadOnlyList<ParkingSession> GetByEntryPeriod(DateTime from, DateTime until, string carNumberPart)
     {
         return _sessions
-            .Where(s => s.EntryTime >= from && s.EntryTime < to)
+            .Where(s => s.EntryTime >= from && s.EntryTime < until)
             .Where(s => s.CarNumber.Contains(carNumberPart, StringComparison.Ordinal))
             .OrderByDescending(s => s.EntryTime)
             .ToList();

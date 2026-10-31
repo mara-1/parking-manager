@@ -27,7 +27,7 @@ public sealed class CoreServicesTests : IDisposable
         {
             Assert.Equal("А123ВС73", Assert.Single(reopened.Parking.GetActiveSessions(string.Empty)).CarNumber);
             Assert.Equal(DatabaseInitializer.RegularCapacity - 1, reopened.Parking.GetOccupancy().Single(o => o.Category == SpotCategory.Regular).Free);
-            reopened.Parking.RegisterExit(sessionId);
+            Assert.Equal(60m, reopened.Parking.RegisterExit(sessionId).Amount);
         }
 
         using (var third = CoreServices.Create(_databasePath))
