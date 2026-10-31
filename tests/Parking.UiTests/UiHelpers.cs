@@ -51,6 +51,23 @@ public static class UiHelpers
         WaitFor(parent, automationId, element => element.Name, expected);
     }
 
+    // Для текстов, конец которых зависит от текущего времени (например, длительность стоянки).
+    public static void WaitForTextStart(AutomationElement parent, string automationId, string expectedStart)
+    {
+        var actual = string.Empty;
+        var matched = Retry.WhileFalse(
+            () =>
+            {
+                actual = Find(parent, automationId).Name;
+                return actual.StartsWith(expectedStart, StringComparison.Ordinal);
+            },
+            UiTestSettings.Timeout,
+            UiTestSettings.PollInterval,
+            ignoreException: true);
+
+        Assert.True(matched.Result, $"«{automationId}»: ожидалось начало «{expectedStart}», на экране «{actual}».");
+    }
+
     public static void WaitForHelpText(AutomationElement parent, string automationId, string expected)
     {
         WaitFor(parent, automationId, element => element.HelpText, expected);

@@ -17,9 +17,12 @@ public sealed class CoreServices : IDisposable
         var categories = new CategoryRepository(dbContext);
         var tariffs = new TariffRepository(dbContext);
         var bookings = new BookingRepository(dbContext);
-        Parking = new ParkingService(categories, new SessionRepository(dbContext), tariffs, bookings, timeProvider);
+        var sessions = new SessionRepository(dbContext);
+        Parking = new ParkingService(categories, sessions, tariffs, bookings, timeProvider);
         Settings = new SettingsService(categories, tariffs, Parking);
         Bookings = new BookingService(bookings, Parking, timeProvider);
+        Reports = new ReportService(sessions, bookings, timeProvider);
+        Exporter = new ReportExporter();
     }
 
     public IAuthService Auth { get; }
@@ -29,6 +32,10 @@ public sealed class CoreServices : IDisposable
     public ISettingsService Settings { get; }
 
     public IBookingService Bookings { get; }
+
+    public IReportService Reports { get; }
+
+    public IReportExporter Exporter { get; }
 
     public static CoreServices Create(string databasePath)
     {
