@@ -12,11 +12,12 @@ namespace Parking.UiTests;
 public sealed class AppSession : IDisposable
 {
     public const string LoginWindowTitle = "Вход — ParkingManager";
-    public const string ParkingWindowTitle = "ParkingManager — схема парковки";
+    public const string ParkingWindowTitle = "ParkingManager — учёт парковки";
     public const string DemoLogin = "admin";
     public const string DemoPassword = "admin123";
     public const string DemoOperatorName = "Демо-оператор";
-    public const int DemoSpotCount = 20;
+    public const int RegularCapacity = 450;
+    public const int DisabledCapacity = 50;
 
     private readonly string _dataFolder;
     private readonly UIA3Automation _automation;
@@ -92,7 +93,7 @@ public sealed class AppSession : IDisposable
     {
         SubmitLogin(DemoLogin, DemoPassword);
         var parkingWindow = WaitForWindow(ParkingWindowTitle);
-        UiHelpers.WaitForText(parkingWindow, "FreeCountText", $"{DemoSpotCount}");
+        UiHelpers.WaitForText(parkingWindow, "RegularFreeText", $"{RegularCapacity}");
         return parkingWindow;
     }
 

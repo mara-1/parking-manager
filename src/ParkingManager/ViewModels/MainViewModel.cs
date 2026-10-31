@@ -5,37 +5,70 @@ using Parking.Core.Services;
 
 namespace ParkingManager.ViewModels;
 
+// Главное окно: занятость по категориям, регистрация въезда и выезда,
+// список автомобилей на парковке с поиском, схема занятости и история.
 public sealed class MainViewModel : ViewModelBase
 {
     private readonly IAuthService _authService;
     private readonly IParkingService _parkingService;
-    private SpotViewModel? _selectedSpot;
+    private readonly TimeProvider _timeProvider;
+    private SpotCategory _entryCategory = SpotCategory.Regular;
+    private SessionViewModel? _selectedSession;
     private string _carNumber = string.Empty;
+    private string _searchText = string.Empty;
     private string _statusMessage = string.Empty;
 
-    public MainViewModel(IAuthService authService, IParkingService parkingService)
+    public MainViewModel(IAuthService authService, IParkingService parkingService, TimeProvider timeProvider)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _parkingService = parkingService ?? throw new ArgumentNullException(nameof(parkingService));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
 
-        Spots = new ObservableCollection<SpotViewModel>();
+        Occupancy = new ObservableCollection<OccupancyViewModel>();
+        Sessions = new ObservableCollection<SessionViewModel>();
+        History = new HistoryViewModel(parkingService, timeProvider);
         RegisterEntryCommand = new RelayCommand(RegisterEntry, CanRegisterEntry);
         RegisterExitCommand = new RelayCommand(RegisterExit, CanRegisterExit);
-        LoadSpots();
+        Refresh(null);
     }
 
     public string OperatorName => _authService.CurrentOperator?.FullName ?? string.Empty;
 
-    public ObservableCollection<SpotViewModel> Spots { get; }
+    public ObservableCollection<OccupancyViewModel> Occupancy { get; }
 
-    public SpotViewModel? SelectedSpot
+    public ObservableCollection<SessionViewModel> Sessions { get; }
+
+    public HistoryViewModel History { get; }
+
+    public int RegularFree => FreeOf(SpotCategory.Regular);
+
+    public int DisabledFree => FreeOf(SpotCategory.Disabled);
+
+    public int ActiveCount => Occupancy.Sum(o => o.Occupied);
+
+    public SpotCategory EntryCategory => _entryCategory;
+
+    // Две радиокнопки категории въезда привязаны к этим свойствам.
+    public bool IsRegularCategory
     {
-        get => _selectedSpot;
+        get => _entryCategory == SpotCategory.Regular;
         set
         {
-            if (SetProperty(ref _selectedSpot, value))
+            if (value)
             {
-                CommandManager.InvalidateRequerySuggested();
+                SetEntryCategory(SpotCategory.Regular);
+            }
+        }
+    }
+
+    public bool IsDisabledCategory
+    {
+        get => _entryCategory == SpotCategory.Disabled;
+        set
+        {
+            if (value)
+            {
+                SetEntryCategory(SpotCategory.Disabled);
             }
         }
     }
@@ -45,7 +78,33 @@ public sealed class MainViewModel : ViewModelBase
         get => _carNumber;
         set
         {
-            if (SetProperty(ref _carNumber, value))
+            if (SetProperty(ref _carNumber, value ?? string.Empty))
+            {
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    // Поиск по части номера; если найден ровно один автомобиль, он выделяется,
+    // и оператор сразу может зарегистрировать его выезд.
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value ?? string.Empty))
+            {
+                LoadSessions(null);
+            }
+        }
+    }
+
+    public SessionViewModel? SelectedSession
+    {
+        get => _selectedSession;
+        set
+        {
+            if (SetProperty(ref _selectedSession, value))
             {
                 CommandManager.InvalidateRequerySuggested();
             }
@@ -58,80 +117,99 @@ public sealed class MainViewModel : ViewModelBase
         private set => SetProperty(ref _statusMessage, value);
     }
 
-    public int FreeCount => Spots.Count(s => s.Status == SpotStatus.Free);
-
-    public int OccupiedCount => Spots.Count(s => s.Status == SpotStatus.Occupied);
-
     public ICommand RegisterEntryCommand { get; }
 
     public ICommand RegisterExitCommand { get; }
 
-    private void LoadSpots()
+    private void SetEntryCategory(SpotCategory category)
     {
-        var selectedId = SelectedSpot?.Id;
-
-        Spots.Clear();
-        foreach (var spot in _parkingService.GetSpots())
+        if (_entryCategory == category)
         {
-            Spots.Add(new SpotViewModel(spot));
+            return;
         }
 
-        SelectedSpot = Spots.FirstOrDefault(s => s.Id == selectedId);
-        OnPropertyChanged(nameof(FreeCount));
-        OnPropertyChanged(nameof(OccupiedCount));
+        _entryCategory = category;
+        OnPropertyChanged(nameof(EntryCategory));
+        OnPropertyChanged(nameof(IsRegularCategory));
+        OnPropertyChanged(nameof(IsDisabledCategory));
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    private int FreeOf(SpotCategory category)
+    {
+        return Occupancy.FirstOrDefault(o => o.Category == category)?.Free ?? 0;
+    }
+
+    private void Refresh(int? selectSessionId)
+    {
+        Occupancy.Clear();
+        foreach (var info in _parkingService.GetOccupancy())
+        {
+            Occupancy.Add(new OccupancyViewModel(info));
+        }
+
+        OnPropertyChanged(nameof(RegularFree));
+        OnPropertyChanged(nameof(DisabledFree));
+        OnPropertyChanged(nameof(ActiveCount));
+        LoadSessions(selectSessionId);
+    }
+
+    private void LoadSessions(int? selectSessionId)
+    {
+        var keepId = selectSessionId ?? SelectedSession?.Id;
+        var now = _timeProvider.GetLocalNow().DateTime;
+
+        Sessions.Clear();
+        foreach (var session in _parkingService.GetActiveSessions(SearchText))
+        {
+            Sessions.Add(new SessionViewModel(session, now));
+        }
+
+        SelectedSession = Sessions.FirstOrDefault(s => s.Id == keepId)
+            ?? (Sessions.Count == 1 && SearchText.Length > 0 ? Sessions[0] : null);
         CommandManager.InvalidateRequerySuggested();
     }
 
     private bool CanRegisterEntry()
     {
-        return SelectedSpot is { IsFree: true } && !string.IsNullOrWhiteSpace(CarNumber);
-    }
-
-    private bool CanRegisterExit()
-    {
-        return SelectedSpot is { IsOccupied: true };
+        return !string.IsNullOrWhiteSpace(CarNumber) && FreeOf(_entryCategory) > 0;
     }
 
     private void RegisterEntry()
     {
-        var spot = SelectedSpot;
-        if (spot is null)
-        {
-            return;
-        }
-
         try
         {
-            _parkingService.RegisterEntry(spot.Id, CarNumber);
-            StatusMessage = $"Въезд зарегистрирован: место {spot.Number}.";
+            var session = _parkingService.RegisterEntry(CarNumber, _entryCategory);
+            StatusMessage = $"Въезд зарегистрирован: {session.CarNumber}, место {session.Category.ToShortName()}.";
             CarNumber = string.Empty;
-            LoadSpots();
+            Refresh(session.Id);
         }
-        catch (ArgumentException ex)
-        {
-            StatusMessage = ex.Message;
-        }
-        catch (InvalidOperationException ex)
+        catch (ParkingOperationException ex)
         {
             StatusMessage = ex.Message;
         }
     }
 
+    private bool CanRegisterExit()
+    {
+        return SelectedSession is not null;
+    }
+
     private void RegisterExit()
     {
-        var spot = SelectedSpot;
-        if (spot is null)
+        var selected = SelectedSession;
+        if (selected is null)
         {
             return;
         }
 
         try
         {
-            _parkingService.RegisterExit(spot.Id);
-            StatusMessage = $"Выезд зарегистрирован: место {spot.Number} освобождено.";
-            LoadSpots();
+            var session = _parkingService.RegisterExit(selected.Id);
+            StatusMessage = $"Выезд зарегистрирован: {session.CarNumber}.";
+            Refresh(null);
         }
-        catch (InvalidOperationException ex)
+        catch (ParkingOperationException ex)
         {
             StatusMessage = ex.Message;
         }

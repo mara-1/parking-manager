@@ -32,7 +32,7 @@ public partial class App : Application
             return;
         }
 
-        var parkingWindow = new ParkingWindow(new MainViewModel(_core.Auth, _core.Parking));
+        var parkingWindow = new ParkingWindow(new MainViewModel(_core.Auth, _core.Parking, TimeProvider.System));
         MainWindow = parkingWindow;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         parkingWindow.Show();

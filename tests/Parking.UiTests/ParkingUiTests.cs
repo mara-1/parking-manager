@@ -1,5 +1,3 @@
-using FlaUI.Core.Definitions;
-
 namespace Parking.UiTests;
 
 [Trait("Category", "UI")]
@@ -10,67 +8,129 @@ public class ParkingUiTests
 
     [Fact]
     [Trait("Task", "6")]
-    public void ParkingWindow_ShowsAllDemoSpotsAsFree()
+    public void MainWindow_AfterLogin_ShowsCapacityPerCategory()
     {
         using var session = new AppSession();
         var parking = session.LoginAsDemoOperator();
 
-        var spots = UiHelpers.Find(parking, "SpotsList").FindAllChildren(cf => cf.ByControlType(ControlType.ListItem));
-
-        Assert.Equal(AppSession.DemoSpotCount, spots.Length);
-        Assert.All(spots, spot => Assert.Equal("Свободно", spot.HelpText));
-        UiHelpers.WaitForText(parking, "OccupiedCountText", "0");
+        UiHelpers.WaitForText(parking, "RegularFreeText", $"{AppSession.RegularCapacity}");
+        UiHelpers.WaitForText(parking, "DisabledFreeText", $"{AppSession.DisabledCapacity}");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "0");
     }
 
     [Fact]
     [Trait("Task", "7")]
-    public void RegisterEntryAndExit_UpdatesSpotAndCounters()
+    public void RegisterEntryAndExit_UpdatesCounters()
     {
         using var session = new AppSession();
         var parking = session.LoginAsDemoOperator();
 
-        // Въезд: оператор выбирает место, вводит номер и регистрирует въезд.
-        UiHelpers.Select(parking, "Spot_A-01");
-        UiHelpers.WaitForText(parking, "SelectedSpotNumberText", "A-01");
+        // Въезд: оператор вводит номер и регистрирует въезд на обычное место.
         UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
         UiHelpers.ClickWhenEnabled(parking, "EntryButton");
 
-        UiHelpers.WaitForText(parking, "StatusMessageText", "Въезд зарегистрирован: место A-01.");
-        UiHelpers.WaitForText(parking, "FreeCountText", "19");
-        UiHelpers.WaitForText(parking, "OccupiedCountText", "1");
-        UiHelpers.WaitForText(parking, "SelectedSpotStatusText", "Занято");
-        Assert.StartsWith(CarNumber, UiHelpers.Find(parking, "Spot_A-01").HelpText, StringComparison.Ordinal);
+        UiHelpers.WaitForText(parking, "StatusMessageText", $"Въезд зарегистрирован: {CarNumber}, место обычное.");
+        UiHelpers.WaitForText(parking, "RegularFreeText", "449");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "1");
         UiHelpers.Screenshot(parking, "04-after-entry");
 
-        // Выезд: место освобождается, счётчики возвращаются к исходным.
+        // Выезд: только что въехавший автомобиль уже выделен в списке.
         UiHelpers.ClickWhenEnabled(parking, "ExitButton");
 
-        UiHelpers.WaitForText(parking, "StatusMessageText", "Выезд зарегистрирован: место A-01 освобождено.");
-        UiHelpers.WaitForText(parking, "FreeCountText", "20");
-        UiHelpers.WaitForHelpText(parking, "Spot_A-01", "Свободно");
+        UiHelpers.WaitForText(parking, "StatusMessageText", $"Выезд зарегистрирован: {CarNumber}.");
+        UiHelpers.WaitForText(parking, "RegularFreeText", "450");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "0");
         UiHelpers.Screenshot(parking, "05-after-exit");
     }
 
     [Fact]
-    [Trait("Task", "7")]
-    public void RegisterEntry_SameCarTwice_ShowsErrorAndKeepsSpotFree()
+    [Trait("Task", "6")]
+    public void RegisterEntry_DisabledCategory_TakesDisabledPlace()
     {
         using var session = new AppSession();
         var parking = session.LoginAsDemoOperator();
 
-        UiHelpers.Select(parking, "Spot_A-01");
+        UiHelpers.Select(parking, "DisabledCategoryRadio");
+        UiHelpers.SetText(parking, "CarNumberBox", "М808АА73");
+        UiHelpers.ClickWhenEnabled(parking, "EntryButton");
+
+        UiHelpers.WaitForText(parking, "StatusMessageText", "Въезд зарегистрирован: М808АА73, место для инвалидов.");
+        UiHelpers.WaitForText(parking, "DisabledFreeText", "49");
+        UiHelpers.WaitForText(parking, "RegularFreeText", "450");
+    }
+
+    [Fact]
+    [Trait("Task", "7")]
+    public void RegisterEntry_SameCarTwice_ShowsError()
+    {
+        using var session = new AppSession();
+        var parking = session.LoginAsDemoOperator();
+
         UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
         UiHelpers.ClickWhenEnabled(parking, "EntryButton");
-        UiHelpers.WaitForText(parking, "FreeCountText", "19");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "1");
 
-        UiHelpers.Select(parking, "Spot_A-02");
-        UiHelpers.WaitForText(parking, "SelectedSpotNumberText", "A-02");
         UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
         UiHelpers.ClickWhenEnabled(parking, "EntryButton");
 
         UiHelpers.WaitForText(parking, "StatusMessageText", $"Автомобиль {CarNumber} уже находится на парковке.");
-        UiHelpers.WaitForText(parking, "FreeCountText", "19");
-        UiHelpers.WaitForHelpText(parking, "Spot_A-02", "Свободно");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "1");
         UiHelpers.Screenshot(parking, "06-duplicate-car");
+    }
+
+    [Fact]
+    [Trait("Task", "7")]
+    public void Search_FindsCarAndRegistersItsExit()
+    {
+        using var session = new AppSession();
+        var parking = session.LoginAsDemoOperator();
+        UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
+        UiHelpers.ClickWhenEnabled(parking, "EntryButton");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "1");
+        UiHelpers.SetText(parking, "CarNumberBox", "Х777ХХ73");
+        UiHelpers.ClickWhenEnabled(parking, "EntryButton");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "2");
+
+        // Поиск по части номера оставляет в списке одну машину и выделяет её.
+        UiHelpers.SetText(parking, "SearchBox", "123");
+        UiHelpers.ClickWhenEnabled(parking, "ExitButton");
+
+        UiHelpers.WaitForText(parking, "StatusMessageText", $"Выезд зарегистрирован: {CarNumber}.");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "1");
+    }
+
+    [Fact]
+    [Trait("Task", "6")]
+    public void SchemeTab_AfterEntry_OpensOccupancyScheme()
+    {
+        using var session = new AppSession();
+        var parking = session.LoginAsDemoOperator();
+        UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
+        UiHelpers.ClickWhenEnabled(parking, "EntryButton");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "1");
+
+        UiHelpers.Select(parking, "SchemeTab");
+
+        Assert.True(UiHelpers.Find(parking, "SchemeTab").Patterns.SelectionItem.Pattern.IsSelected.Value);
+        UiHelpers.Screenshot(parking, "07-scheme");
+    }
+
+    [Fact]
+    [Trait("Task", "7")]
+    public void HistoryTab_AfterExit_ShowsFinishedSession()
+    {
+        using var session = new AppSession();
+        var parking = session.LoginAsDemoOperator();
+        UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
+        UiHelpers.ClickWhenEnabled(parking, "EntryButton");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "1");
+        UiHelpers.ClickWhenEnabled(parking, "ExitButton");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "0");
+
+        UiHelpers.Select(parking, "HistoryTab");
+        UiHelpers.ClickWhenEnabled(parking, "ShowHistoryButton");
+
+        UiHelpers.WaitForText(parking, "HistorySummaryText", "Найдено стоянок: 1");
+        UiHelpers.Screenshot(parking, "08-history");
     }
 }
