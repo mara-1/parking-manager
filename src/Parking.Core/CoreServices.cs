@@ -14,12 +14,21 @@ public sealed class CoreServices : IDisposable
     {
         _dbContext = dbContext;
         Auth = new AuthService(new OperatorRepository(dbContext));
-        Parking = new ParkingService(new CategoryRepository(dbContext), new SessionRepository(dbContext), timeProvider);
+        var categories = new CategoryRepository(dbContext);
+        var tariffs = new TariffRepository(dbContext);
+        var bookings = new BookingRepository(dbContext);
+        Parking = new ParkingService(categories, new SessionRepository(dbContext), tariffs, bookings, timeProvider);
+        Settings = new SettingsService(categories, tariffs, Parking);
+        Bookings = new BookingService(bookings, Parking, timeProvider);
     }
 
     public IAuthService Auth { get; }
 
     public IParkingService Parking { get; }
+
+    public ISettingsService Settings { get; }
+
+    public IBookingService Bookings { get; }
 
     public static CoreServices Create(string databasePath)
     {

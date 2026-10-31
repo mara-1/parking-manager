@@ -19,7 +19,7 @@ public class FakeCategoryRepository : ICategoryRepository
         return _categories;
     }
 
-    public CategoryCapacity? Get(SpotCategory category)
+    public CategoryCapacity? Find(SpotCategory category)
     {
         return _categories.Find(c => c.Category == category);
     }

@@ -19,7 +19,9 @@
       <TextBlock Text="Свободно для инвалидов: " />
       <TextBlock AutomationProperties.AutomationId="DisabledFreeText" Text="{Binding DisabledFree}" FontWeight="SemiBold" Margin="0,0,16,0" />
       <TextBlock Text="На парковке: " />
-      <TextBlock AutomationProperties.AutomationId="ActiveCountText" Text="{Binding ActiveCount}" FontWeight="SemiBold" />
+      <TextBlock AutomationProperties.AutomationId="ActiveCountText" Text="{Binding ActiveCount}" FontWeight="SemiBold" Margin="0,0,16,0" />
+      <TextBlock Text="Брони: " />
+      <TextBlock AutomationProperties.AutomationId="BookedCountText" Text="{Binding BookedCount}" FontWeight="SemiBold" />
     </StackPanel>
 
     <TextBlock DockPanel.Dock="Bottom" AutomationProperties.AutomationId="StatusMessageText" Text="{Binding StatusMessage}" Foreground="DimGray" Margin="0,12,0,0" />
@@ -88,10 +90,48 @@
               <DataGridTextColumn Header="Номер" Binding="{Binding CarNumber}" Width="160" />
               <DataGridTextColumn Header="Категория" Binding="{Binding CategoryName}" Width="160" />
               <DataGridTextColumn Header="Въезд" Binding="{Binding EntryTimeText}" Width="160" />
-              <DataGridTextColumn Header="На парковке" Binding="{Binding DurationText}" Width="*" />
+              <DataGridTextColumn Header="На парковке" Binding="{Binding DurationText}" Width="160" />
+              <DataGridTextColumn Header="К оплате" Binding="{Binding AmountText}" Width="*" />
             </DataGrid.Columns>
           </DataGrid>
         </Grid>
+      </TabItem>
+
+      <!-- Вкладка «Брони»: брони на сегодня, правило неявки 15 минут -->
+      <TabItem Header="Брони" AutomationProperties.AutomationId="BookingsTab">
+        <DockPanel Margin="12" DataContext="{Binding Bookings}">
+          <Border DockPanel.Dock="Top" Padding="12" Margin="0,0,0,12" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="6">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="Номер:" VerticalAlignment="Center" Margin="0,0,8,0" />
+              <TextBox AutomationProperties.AutomationId="BookingCarNumberBox" Width="140" Padding="4" VerticalAlignment="Center"
+                       Text="{Binding CarNumber, UpdateSourceTrigger=PropertyChanged}" />
+              <RadioButton Content="Обычное" GroupName="BookingCategory" IsChecked="{Binding IsRegularCategory}"
+                           VerticalAlignment="Center" Margin="12,0,0,0" />
+              <RadioButton AutomationProperties.AutomationId="BookingDisabledRadio" Content="Для инвалидов" GroupName="BookingCategory"
+                           IsChecked="{Binding IsDisabledCategory}" VerticalAlignment="Center" Margin="8,0,0,0" />
+              <TextBlock Text="Прибытие (ЧЧ:ММ):" VerticalAlignment="Center" Margin="16,0,8,0" />
+              <TextBox AutomationProperties.AutomationId="BookingTimeBox" Width="70" Padding="4" VerticalAlignment="Center"
+                       Text="{Binding ArrivalText, UpdateSourceTrigger=PropertyChanged}" />
+              <Button AutomationProperties.AutomationId="CreateBookingButton" Content="Забронировать" Command="{Binding CreateCommand}"
+                      Padding="12,6" Margin="16,0,0,0" />
+              <Button AutomationProperties.AutomationId="CancelBookingButton" Content="Отменить бронь" Command="{Binding CancelCommand}"
+                      Padding="12,6" Margin="8,0,0,0" />
+            </StackPanel>
+          </Border>
+          <TextBlock DockPanel.Dock="Top" AutomationProperties.AutomationId="BookingMessageText" Text="{Binding Message}"
+                     FontWeight="SemiBold" Margin="0,0,0,8" />
+          <TextBlock DockPanel.Dock="Bottom" Foreground="Gray" Margin="0,8,0,0"
+                     Text="Бронь удерживает одно место категории. Если автомобиль не приехал в течение 15 минут после назначенного времени, бронь снимается автоматически." TextWrapping="Wrap" />
+          <DataGrid AutomationProperties.AutomationId="BookingsGrid" ItemsSource="{Binding Bookings}" SelectedItem="{Binding SelectedBooking}"
+                    AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" HeadersVisibility="Column" CanUserAddRows="False">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Номер" Binding="{Binding CarNumber}" Width="140" />
+              <DataGridTextColumn Header="Категория" Binding="{Binding CategoryName}" Width="140" />
+              <DataGridTextColumn Header="Прибытие" Binding="{Binding ArrivalText}" Width="100" />
+              <DataGridTextColumn Header="Статус" Binding="{Binding StatusText}" Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </DockPanel>
       </TabItem>
 
       <!-- Вкладка «Схема занятости»: квадратик = место, заполнение по порядку -->
@@ -158,10 +198,50 @@
               <DataGridTextColumn Header="Категория" Binding="{Binding CategoryName}" Width="140" />
               <DataGridTextColumn Header="Въезд" Binding="{Binding EntryTimeText}" Width="150" />
               <DataGridTextColumn Header="Выезд" Binding="{Binding ExitTimeText}" Width="150" />
-              <DataGridTextColumn Header="Время" Binding="{Binding DurationText}" Width="*" />
+              <DataGridTextColumn Header="Время" Binding="{Binding DurationText}" Width="120" />
+              <DataGridTextColumn Header="Сумма" Binding="{Binding AmountText}" Width="*" />
             </DataGrid.Columns>
           </DataGrid>
         </DockPanel>
+      </TabItem>
+
+      <!-- Вкладка «Тарифы и места»: вместимость категорий и стоимость часа -->
+      <TabItem Header="Тарифы и места" AutomationProperties.AutomationId="SettingsTab">
+        <StackPanel Margin="12" DataContext="{Binding Settings}" HorizontalAlignment="Left">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="220" />
+              <ColumnDefinition Width="140" />
+              <ColumnDefinition Width="160" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Категория мест" Foreground="Gray" />
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="Мест" Foreground="Gray" />
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="Стоимость часа, ₽" Foreground="Gray" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Обычные места" VerticalAlignment="Center" Margin="0,8,0,0" />
+            <TextBox Grid.Row="1" Grid.Column="1" AutomationProperties.AutomationId="RegularCapacityBox" Width="100" Padding="4"
+                     HorizontalAlignment="Left" Margin="0,8,0,0" Text="{Binding RegularCapacityText, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Grid.Row="1" Grid.Column="2" AutomationProperties.AutomationId="RegularPriceBox" Width="100" Padding="4"
+                     HorizontalAlignment="Left" Margin="0,8,0,0" Text="{Binding RegularPriceText, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Места для инвалидов" VerticalAlignment="Center" Margin="0,8,0,0" />
+            <TextBox Grid.Row="2" Grid.Column="1" AutomationProperties.AutomationId="DisabledCapacityBox" Width="100" Padding="4"
+                     HorizontalAlignment="Left" Margin="0,8,0,0" Text="{Binding DisabledCapacityText, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Grid.Row="2" Grid.Column="2" AutomationProperties.AutomationId="DisabledPriceBox" Width="100" Padding="4"
+                     HorizontalAlignment="Left" Margin="0,8,0,0" Text="{Binding DisabledPriceText, UpdateSourceTrigger=PropertyChanged}" />
+          </Grid>
+          <TextBlock Text="{Binding InUseText}" Foreground="Gray" Margin="0,12,0,0" />
+          <TextBlock Text="Оплачивается каждый начатый час стоянки. Мест для инвалидов — не менее 10 % от общего числа."
+                     Foreground="Gray" Margin="0,4,0,0" />
+          <Button AutomationProperties.AutomationId="SaveSettingsButton" Content="Сохранить" Command="{Binding SaveCommand}"
+                  HorizontalAlignment="Left" Padding="16,6" Margin="0,12,0,0" />
+          <TextBlock AutomationProperties.AutomationId="SettingsMessageText" Text="{Binding Message}" FontWeight="SemiBold" Margin="0,8,0,0" />
+        </StackPanel>
       </TabItem>
     </TabControl>
   </DockPanel>

@@ -18,5 +18,5 @@ public interface ISessionRepository
     IReadOnlyList<ParkingSession> GetActive(string carNumberPart);
 
     // Стоянки с въездом в периоде [from, to); carNumberPart — часть номера или пустая строка.
-    IReadOnlyList<ParkingSession> GetByEntryPeriod(DateTime from, DateTime to, string carNumberPart);
+    IReadOnlyList<ParkingSession> GetByEntryPeriod(DateTime from, DateTime until, string carNumberPart);
 }

@@ -15,7 +15,7 @@ public class HistoryViewModelTests
 
     public HistoryViewModelTests()
     {
-        _service = new ParkingService(new FakeCategoryRepository(regular: 10, disabled: 2), new FakeSessionRepository(), _clock);
+        _service = new ParkingService(new FakeCategoryRepository(regular: 10, disabled: 2), new FakeSessionRepository(), new FakeTariffRepository(), new FakeBookingRepository(), _clock);
     }
 
     [Fact]
@@ -30,10 +30,11 @@ public class HistoryViewModelTests
         history.Show();
 
         Assert.Equal(2, history.Sessions.Count);
-        Assert.Equal("Найдено стоянок: 2", history.Summary);
+        Assert.Equal("Найдено стоянок: 2 · сумма 60 ₽", history.Summary);
         var finished = history.Sessions.Single(s => s.CarNumber == "А123ВС73");
         Assert.Equal("24.10.2026 09:45", finished.ExitTimeText);
         Assert.Equal("45 мин", finished.DurationText);
+        Assert.Equal("60 ₽", finished.AmountText);
         Assert.Equal("на парковке", history.Sessions.Single(s => s.CarNumber == "Х777ХХ73").ExitTimeText);
     }
 
@@ -62,6 +63,6 @@ public class HistoryViewModelTests
         history.Show();
 
         Assert.Empty(history.Sessions);
-        Assert.Equal("Найдено стоянок: 0", history.Summary);
+        Assert.Equal("Найдено стоянок: 0 · сумма 0 ₽", history.Summary);
     }
 }

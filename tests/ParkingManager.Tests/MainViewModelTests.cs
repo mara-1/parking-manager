@@ -17,8 +17,16 @@ public class MainViewModelTests
     public MainViewModelTests()
     {
         _authService.Login(FakeAuthService.ValidLogin, FakeAuthService.ValidPassword);
-        var service = new ParkingService(new FakeCategoryRepository(regular: 3, disabled: 1), new FakeSessionRepository(), _clock);
-        _viewModel = new MainViewModel(_authService, service, _clock);
+        var categories = new FakeCategoryRepository(regular: 3, disabled: 1);
+        var tariffs = new FakeTariffRepository(regular: 60m, disabled: 0m);
+        var bookings = new FakeBookingRepository();
+        var service = new ParkingService(categories, new FakeSessionRepository(), tariffs, bookings, _clock);
+        _viewModel = new MainViewModel(
+            _authService,
+            service,
+            new SettingsService(categories, tariffs, service),
+            new BookingService(bookings, service, _clock),
+            _clock);
     }
 
     [Fact]
@@ -59,6 +67,7 @@ public class MainViewModelTests
         var session = Assert.Single(_viewModel.Sessions);
         Assert.Equal("А123ВС73", session.CarNumber);
         Assert.Equal("обычное", session.CategoryName);
+        Assert.Equal("60 ₽", session.AmountText);
         Assert.Equal(2, _viewModel.RegularFree);
         Assert.Equal(1, _viewModel.ActiveCount);
         Assert.Equal(string.Empty, _viewModel.CarNumber);
@@ -83,15 +92,17 @@ public class MainViewModelTests
 
     [Fact]
     [Trait("Task", "6")]
-    public void RegisterEntryCommand_CategoryFull_CannotExecute()
+    public void RegisterEntry_CategoryFull_ShowsNoPlacesMessage()
     {
         _viewModel.IsDisabledCategory = true;
         _viewModel.CarNumber = "М808АА73";
         _viewModel.RegisterEntryCommand.Execute(null);
 
         _viewModel.CarNumber = "Н431ХА73";
+        _viewModel.RegisterEntryCommand.Execute(null);
 
-        Assert.False(_viewModel.RegisterEntryCommand.CanExecute(null));
+        Assert.Equal("Свободных мест нет (Места для инвалидов).", _viewModel.StatusMessage);
+        Assert.Equal(1, _viewModel.ActiveCount);
     }
 
     [Fact]
@@ -127,7 +138,7 @@ public class MainViewModelTests
         Assert.Empty(_viewModel.Sessions);
         Assert.Equal(3, _viewModel.RegularFree);
         Assert.Null(_viewModel.SelectedSession);
-        Assert.Equal("Выезд зарегистрирован: А123ВС73.", _viewModel.StatusMessage);
+        Assert.Equal("Выезд зарегистрирован: А123ВС73, к оплате 120 ₽.", _viewModel.StatusMessage);
     }
 
     [Fact]
@@ -161,5 +172,32 @@ public class MainViewModelTests
         Assert.Equal(CellState.Occupied, regular.Cells[0]);
         Assert.All(regular.Cells.Skip(1), cell => Assert.Equal(CellState.Free, cell));
         Assert.Equal("занято 1 · бронь 0 · свободно 2 из 3", regular.Summary);
+    }
+
+    [Fact]
+    [Trait("Task", "8")]
+    public void SettingsSaved_NewCapacity_RefreshesCounters()
+    {
+        _viewModel.Settings.RegularCapacityText = "9";
+
+        _viewModel.Settings.SaveCommand.Execute(null);
+
+        Assert.Equal("Настройки сохранены.", _viewModel.Settings.Message);
+        Assert.Equal(9, _viewModel.RegularFree);
+    }
+
+    [Fact]
+    [Trait("Task", "9")]
+    public void BookingCreated_HoldsPlaceInCountersAndScheme()
+    {
+        _viewModel.Bookings.CarNumber = "Е777КХ73";
+        _viewModel.Bookings.ArrivalText = "10:00";
+
+        _viewModel.Bookings.CreateCommand.Execute(null);
+
+        Assert.Equal(2, _viewModel.RegularFree);
+        Assert.Equal(1, _viewModel.BookedCount);
+        var regular = _viewModel.Occupancy.Single(o => o.Category == SpotCategory.Regular);
+        Assert.Equal(CellState.Booked, regular.Cells[0]);
     }
 }
