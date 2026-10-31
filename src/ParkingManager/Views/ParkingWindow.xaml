@@ -205,6 +205,68 @@
         </DockPanel>
       </TabItem>
 
+      <!-- Вкладка «Отчёты»: статистика за период, выгрузка в Excel и PDF -->
+      <TabItem Header="Отчёты" AutomationProperties.AutomationId="ReportsTab">
+        <DockPanel Margin="12" DataContext="{Binding Reports}">
+          <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="С" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <DatePicker AutomationProperties.AutomationId="ReportFromPicker" SelectedDate="{Binding From}" Width="130" />
+            <TextBlock Text="по" VerticalAlignment="Center" Margin="12,0,6,0" />
+            <DatePicker AutomationProperties.AutomationId="ReportToPicker" SelectedDate="{Binding To}" Width="130" />
+            <Button AutomationProperties.AutomationId="BuildReportButton" Content="Сформировать" Command="{Binding BuildCommand}"
+                    Padding="12,4" Margin="12,0,0,0" />
+            <Button AutomationProperties.AutomationId="ExportExcelButton" Content="Сохранить в Excel" Command="{Binding ExportExcelCommand}"
+                    Padding="12,4" Margin="24,0,0,0" />
+            <Button AutomationProperties.AutomationId="ExportPdfButton" Content="Сохранить в PDF" Command="{Binding ExportPdfCommand}"
+                    Padding="12,4" Margin="8,0,0,0" />
+          </StackPanel>
+
+          <Border DockPanel.Dock="Top" Padding="12" Margin="0,0,0,12" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="6">
+            <StackPanel>
+              <TextBlock AutomationProperties.AutomationId="ReportTotalsText" Text="{Binding TotalsText}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock AutomationProperties.AutomationId="ReportBookingsText" Text="{Binding BookingsText}" Foreground="Gray" Margin="0,4,0,0" />
+            </StackPanel>
+          </Border>
+
+          <TextBlock DockPanel.Dock="Bottom" AutomationProperties.AutomationId="ReportMessageText" Text="{Binding Message}"
+                     FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0" />
+
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="3*" />
+              <ColumnDefinition Width="16" />
+              <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="По категориям мест" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <DataGrid Grid.Row="1" Grid.Column="0" AutomationProperties.AutomationId="ReportCategoriesGrid" ItemsSource="{Binding Categories}"
+                      AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserAddRows="False" VerticalAlignment="Top">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Категория" Binding="{Binding CategoryName}" Width="*" />
+                <DataGridTextColumn Header="Стоянок" Binding="{Binding Sessions}" Width="80" />
+                <DataGridTextColumn Header="Завершено" Binding="{Binding Finished}" Width="90" />
+                <DataGridTextColumn Header="Выручка" Binding="{Binding RevenueText}" Width="100" />
+                <DataGridTextColumn Header="Ср. стоянка" Binding="{Binding AverageStayText}" Width="110" />
+              </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="По дням" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <DataGrid Grid.Row="1" Grid.Column="2" AutomationProperties.AutomationId="ReportDaysGrid" ItemsSource="{Binding Days}"
+                      AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" CanUserAddRows="False">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Дата" Binding="{Binding DateText}" Width="*" />
+                <DataGridTextColumn Header="Въездов" Binding="{Binding Entries}" Width="80" />
+                <DataGridTextColumn Header="Выручка" Binding="{Binding RevenueText}" Width="100" />
+              </DataGrid.Columns>
+            </DataGrid>
+          </Grid>
+        </DockPanel>
+      </TabItem>
+
       <!-- Вкладка «Тарифы и места»: вместимость категорий и стоимость часа -->
       <TabItem Header="Тарифы и места" AutomationProperties.AutomationId="SettingsTab">
         <StackPanel Margin="12" DataContext="{Binding Settings}" HorizontalAlignment="Left">

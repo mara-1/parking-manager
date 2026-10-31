@@ -6,7 +6,7 @@ using Parking.Core.Services;
 namespace ParkingManager.ViewModels;
 
 // Главное окно: занятость по категориям, регистрация въезда и выезда,
-// список автомобилей на парковке с поиском, схема занятости и история.
+// список автомобилей на парковке с поиском, схема занятости, история и отчёты.
 public sealed class MainViewModel : ViewModelBase
 {
     private readonly IAuthService _authService;
@@ -23,6 +23,7 @@ public sealed class MainViewModel : ViewModelBase
         IParkingService parkingService,
         ISettingsService settingsService,
         IBookingService bookingService,
+        ReportsViewModel reports,
         TimeProvider timeProvider)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
@@ -36,6 +37,7 @@ public sealed class MainViewModel : ViewModelBase
         Settings.Saved += (sender, args) => Refresh(null);
         Bookings = new BookingsViewModel(bookingService, timeProvider);
         Bookings.Changed += (sender, args) => Refresh(null);
+        Reports = reports ?? throw new ArgumentNullException(nameof(reports));
         RegisterEntryCommand = new RelayCommand(RegisterEntry, CanRegisterEntry);
         RegisterExitCommand = new RelayCommand(RegisterExit, CanRegisterExit);
         Refresh(null);
@@ -52,6 +54,8 @@ public sealed class MainViewModel : ViewModelBase
     public SettingsViewModel Settings { get; }
 
     public BookingsViewModel Bookings { get; }
+
+    public ReportsViewModel Reports { get; }
 
     public int BookedCount => Occupancy.Sum(o => o.Booked);
 

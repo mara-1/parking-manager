@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using Parking.Core;
+using ParkingManager.Services;
 using ParkingManager.ViewModels;
 using ParkingManager.Views;
 
@@ -32,7 +33,9 @@ public partial class App : Application
             return;
         }
 
-        var parkingWindow = new ParkingWindow(new MainViewModel(_core.Auth, _core.Parking, _core.Settings, _core.Bookings, TimeProvider.System));
+        var reports = new ReportsViewModel(_core.Reports, _core.Exporter, new SaveFileDialogService(), TimeProvider.System);
+        var mainViewModel = new MainViewModel(_core.Auth, _core.Parking, _core.Settings, _core.Bookings, reports, TimeProvider.System);
+        var parkingWindow = new ParkingWindow(mainViewModel);
         MainWindow = parkingWindow;
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         parkingWindow.Show();
