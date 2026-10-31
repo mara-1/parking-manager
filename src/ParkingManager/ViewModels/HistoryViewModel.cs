@@ -70,10 +70,10 @@ public sealed class HistoryViewModel : ViewModelBase
         var now = _timeProvider.GetLocalNow().DateTime;
         foreach (var session in _parkingService.GetHistory(from, to, SearchText))
         {
-            Sessions.Add(new SessionViewModel(session, now));
+            Sessions.Add(new SessionViewModel(session, now, _parkingService.CalculateAmount(session)));
         }
 
-        Summary = $"Найдено стоянок: {Sessions.Count}";
+        Summary = $"Найдено стоянок: {Sessions.Count} · сумма {MoneyFormat.Format(Sessions.Sum(s => s.Amount))}";
     }
 
     private DateTime Today()

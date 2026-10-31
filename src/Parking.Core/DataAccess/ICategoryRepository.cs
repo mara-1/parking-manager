@@ -6,7 +6,7 @@ public interface ICategoryRepository
 {
     IReadOnlyList<CategoryCapacity> GetAll();
 
-    CategoryCapacity? Get(SpotCategory category);
+    CategoryCapacity? Find(SpotCategory category);
 
     void Update(CategoryCapacity capacity);
 }

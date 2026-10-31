@@ -49,9 +49,9 @@ public class SessionRepository : ISessionRepository
         return Filter(query, carNumberPart).OrderByDescending(s => s.EntryTime).ToList();
     }
 
-    public IReadOnlyList<ParkingSession> GetByEntryPeriod(DateTime from, DateTime to, string carNumberPart)
+    public IReadOnlyList<ParkingSession> GetByEntryPeriod(DateTime from, DateTime until, string carNumberPart)
     {
-        var query = _dbContext.Sessions.Where(s => s.EntryTime >= from && s.EntryTime < to);
+        var query = _dbContext.Sessions.Where(s => s.EntryTime >= from && s.EntryTime < until);
         return Filter(query, carNumberPart).OrderByDescending(s => s.EntryTime).ToList();
     }
 

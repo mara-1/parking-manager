@@ -22,6 +22,18 @@ public sealed class DatabaseInitializerTests : IDisposable
     }
 
     [Fact]
+    [Trait("Task", "8")]
+    public void Initialize_EmptyDatabase_SeedsTariffsAndSchemaVersion()
+    {
+        DatabaseInitializer.Initialize(_database.Context);
+
+        var tariffs = _database.Context.Tariffs.ToList();
+        Assert.Equal(DatabaseInitializer.RegularPricePerHour, tariffs.Single(t => t.Category == SpotCategory.Regular).PricePerHour);
+        Assert.Equal(0m, tariffs.Single(t => t.Category == SpotCategory.Disabled).PricePerHour);
+        Assert.Equal(DatabaseInitializer.SchemaVersion, DatabaseInitializer.GetSchemaVersion(_database.Context));
+    }
+
+    [Fact]
     public void Initialize_CalledTwice_DoesNotDuplicateData()
     {
         DatabaseInitializer.Initialize(_database.Context);

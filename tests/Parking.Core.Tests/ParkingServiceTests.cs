@@ -10,12 +10,13 @@ public class ParkingServiceTests
 {
     private readonly FakeCategoryRepository _categories = new FakeCategoryRepository(regular: 2, disabled: 1);
     private readonly FakeSessionRepository _sessions = new FakeSessionRepository();
+    private readonly FakeTariffRepository _tariffs = new FakeTariffRepository(regular: 60m, disabled: 0m);
     private readonly ManualTimeProvider _clock = new ManualTimeProvider(new DateTime(2026, 10, 24, 9, 15, 30));
     private readonly ParkingService _service;
 
     public ParkingServiceTests()
     {
-        _service = new ParkingService(_categories, _sessions, _clock);
+        _service = new ParkingService(_categories, _sessions, _tariffs, _clock);
     }
 
     [Fact]
@@ -176,5 +177,42 @@ public class ParkingServiceTests
     {
         Assert.Throws<ParkingOperationException>(
             () => _service.GetHistory(new DateTime(2026, 10, 25), new DateTime(2026, 10, 24), string.Empty));
+    }
+
+    [Fact]
+    [Trait("Task", "8")]
+    public void RegisterExit_RegularTariff_FixesAmountForStartedHours()
+    {
+        var session = _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
+        _clock.Advance(TimeSpan.FromMinutes(95));
+
+        var finished = _service.RegisterExit(session.Id);
+
+        Assert.Equal(120m, finished.Amount);
+    }
+
+    [Fact]
+    [Trait("Task", "8")]
+    public void RegisterExit_DisabledPlace_IsFree()
+    {
+        var session = _service.RegisterEntry("М808АА73", SpotCategory.Disabled);
+        _clock.Advance(TimeSpan.FromHours(5));
+
+        Assert.Equal(0m, _service.RegisterExit(session.Id).Amount);
+    }
+
+    [Fact]
+    [Trait("Task", "8")]
+    public void CalculateAmount_ActiveSession_GrowsWithTime()
+    {
+        var session = _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
+
+        var atStart = _service.CalculateAmount(session);
+        _clock.Advance(TimeSpan.FromMinutes(61));
+        var later = _service.CalculateAmount(session);
+
+        Assert.Equal(60m, atStart);
+        Assert.Equal(120m, later);
+        Assert.Null(session.Amount);
     }
 }

@@ -16,8 +16,8 @@ public sealed class SqliteTestDatabase : IDisposable
         var options = new DbContextOptionsBuilder<ParkingDbContext>()
             .UseSqlite(_connection)
             .Options;
+        // Схему создаёт DatabaseInitializer.Initialize, который вызывают сами тесты.
         Context = new ParkingDbContext(options);
-        Context.Database.EnsureCreated();
     }
 
     public ParkingDbContext Context { get; }

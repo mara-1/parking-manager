@@ -91,17 +91,31 @@ public sealed class RepositoryTests : IDisposable
     public void CategoryRepository_Update_PersistsCapacity()
     {
         var repository = new CategoryRepository(_database.Context);
-        var regular = repository.Get(SpotCategory.Regular)!;
+        var regular = repository.Find(SpotCategory.Regular)!;
 
         regular.Capacity = 400;
         repository.Update(regular);
         _database.Context.ChangeTracker.Clear();
 
-        Assert.Equal(400, repository.Get(SpotCategory.Regular)!.Capacity);
+        Assert.Equal(400, repository.Find(SpotCategory.Regular)!.Capacity);
         Assert.Collection(
             repository.GetAll(),
             first => Assert.Equal(SpotCategory.Regular, first.Category),
             second => Assert.Equal(SpotCategory.Disabled, second.Category));
+    }
+
+    [Fact]
+    [Trait("Task", "8")]
+    public void TariffRepository_Update_PersistsDecimalPrice()
+    {
+        var repository = new TariffRepository(_database.Context);
+        var regular = repository.Find(SpotCategory.Regular)!;
+
+        regular.PricePerHour = 75.5m;
+        repository.Update(regular);
+        _database.Context.ChangeTracker.Clear();
+
+        Assert.Equal(75.5m, repository.Find(SpotCategory.Regular)!.PricePerHour);
     }
 
     public void Dispose()

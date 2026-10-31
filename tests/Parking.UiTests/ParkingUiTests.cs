@@ -37,7 +37,7 @@ public class ParkingUiTests
         // Выезд: только что въехавший автомобиль уже выделен в списке.
         UiHelpers.ClickWhenEnabled(parking, "ExitButton");
 
-        UiHelpers.WaitForText(parking, "StatusMessageText", $"Выезд зарегистрирован: {CarNumber}.");
+        UiHelpers.WaitForText(parking, "StatusMessageText", $"Выезд зарегистрирован: {CarNumber}, к оплате 60 ₽.");
         UiHelpers.WaitForText(parking, "RegularFreeText", "450");
         UiHelpers.WaitForText(parking, "ActiveCountText", "0");
         UiHelpers.Screenshot(parking, "05-after-exit");
@@ -95,7 +95,7 @@ public class ParkingUiTests
         UiHelpers.SetText(parking, "SearchBox", "123");
         UiHelpers.ClickWhenEnabled(parking, "ExitButton");
 
-        UiHelpers.WaitForText(parking, "StatusMessageText", $"Выезд зарегистрирован: {CarNumber}.");
+        UiHelpers.WaitForText(parking, "StatusMessageText", $"Выезд зарегистрирован: {CarNumber}, к оплате 60 ₽.");
         UiHelpers.WaitForText(parking, "ActiveCountText", "1");
     }
 
@@ -130,7 +130,27 @@ public class ParkingUiTests
         UiHelpers.Select(parking, "HistoryTab");
         UiHelpers.ClickWhenEnabled(parking, "ShowHistoryButton");
 
-        UiHelpers.WaitForText(parking, "HistorySummaryText", "Найдено стоянок: 1");
+        UiHelpers.WaitForText(parking, "HistorySummaryText", "Найдено стоянок: 1 · сумма 60 ₽");
         UiHelpers.Screenshot(parking, "08-history");
+    }
+
+    [Fact]
+    [Trait("Task", "8")]
+    public void SettingsTab_ChecksDisabledShareAndSavesCapacity()
+    {
+        using var session = new AppSession();
+        var parking = session.LoginAsDemoOperator();
+        UiHelpers.Select(parking, "SettingsTab");
+
+        // 450 + 10 мест: мест для инвалидов меньше 10 % — сохранение запрещено.
+        UiHelpers.SetText(parking, "DisabledCapacityBox", "10");
+        UiHelpers.ClickWhenEnabled(parking, "SaveSettingsButton");
+        UiHelpers.WaitForText(parking, "SettingsMessageText", "Мест для инвалидов должно быть не менее 10 % от общего числа: не менее 46.");
+
+        UiHelpers.SetText(parking, "DisabledCapacityBox", "60");
+        UiHelpers.ClickWhenEnabled(parking, "SaveSettingsButton");
+        UiHelpers.WaitForText(parking, "SettingsMessageText", "Настройки сохранены.");
+        UiHelpers.WaitForText(parking, "DisabledFreeText", "60");
+        UiHelpers.Screenshot(parking, "09-settings");
     }
 }
