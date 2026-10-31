@@ -1,23 +1,23 @@
 using System.Globalization;
 using System.Windows.Media;
-using Parking.Core.Models;
 using ParkingManager.Converters;
+using ParkingManager.ViewModels;
 
 namespace ParkingManager.Tests;
 
 [Trait("Category", "Unit")]
-[Trait("Task", "4")]
-public class SpotStatusToBrushConverterTests
+[Trait("Task", "6")]
+public class CellStateToBrushConverterTests
 {
-    private readonly SpotStatusToBrushConverter _converter = new SpotStatusToBrushConverter();
+    private readonly CellStateToBrushConverter _converter = new CellStateToBrushConverter();
 
     [Theory]
-    [InlineData(SpotStatus.Free, "#FF90EE90")]
-    [InlineData(SpotStatus.Occupied, "#FFCD5C5C")]
-    [InlineData(SpotStatus.Booked, "#FFFFD700")]
-    public void Convert_SpotStatus_ReturnsStatusColor(SpotStatus status, string expectedColor)
+    [InlineData(CellState.Occupied, "#FFCD5C5C")]
+    [InlineData(CellState.Booked, "#FFFFA500")]
+    [InlineData(CellState.Free, "#FF90EE90")]
+    public void Convert_CellState_ReturnsStateColor(CellState state, string expectedColor)
     {
-        var result = _converter.Convert(status, typeof(Brush), string.Empty, CultureInfo.InvariantCulture);
+        var result = _converter.Convert(state, typeof(Brush), string.Empty, CultureInfo.InvariantCulture);
 
         var brush = Assert.IsAssignableFrom<SolidColorBrush>(result);
         Assert.Equal(expectedColor, brush.Color.ToString(CultureInfo.InvariantCulture));
@@ -35,6 +35,6 @@ public class SpotStatusToBrushConverterTests
     public void ConvertBack_Always_Throws()
     {
         Assert.Throws<NotSupportedException>(
-            () => _converter.ConvertBack(Brushes.LightGreen, typeof(SpotStatus), string.Empty, CultureInfo.InvariantCulture));
+            () => _converter.ConvertBack(Brushes.LightGreen, typeof(CellState), string.Empty, CultureInfo.InvariantCulture));
     }
 }

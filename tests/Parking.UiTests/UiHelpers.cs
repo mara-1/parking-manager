@@ -1,5 +1,6 @@
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Capturing;
+using FlaUI.Core.Input;
 using FlaUI.Core.Tools;
 
 namespace Parking.UiTests;
@@ -25,9 +26,11 @@ public static class UiHelpers
         Find(parent, automationId).AsTextBox().Text = text;
     }
 
+    // Выбор вкладки, радиокнопки или строки списка (шаблон SelectionItem в UI Automation).
     public static void Select(AutomationElement parent, string automationId)
     {
-        Find(parent, automationId).AsListBoxItem().Select();
+        Find(parent, automationId).Patterns.SelectionItem.Pattern.Select();
+        Wait.UntilInputIsProcessed();
     }
 
     public static void ClickWhenEnabled(AutomationElement parent, string automationId)

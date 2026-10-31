@@ -24,6 +24,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Тестовые двойники хранилищ и часов берутся из Parking.Core.Tests, чтобы не дублировать код -->
+    <Compile Include="..\Parking.Core.Tests\Fakes\FakeCategoryRepository.cs" Link="Fakes\FakeCategoryRepository.cs" />
+    <Compile Include="..\Parking.Core.Tests\Fakes\FakeSessionRepository.cs" Link="Fakes\FakeSessionRepository.cs" />
+    <Compile Include="..\Parking.Core.Tests\Fakes\ManualTimeProvider.cs" Link="Fakes\ManualTimeProvider.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Parking.Core\Parking.Core.csproj" />
     <ProjectReference Include="..\..\src\ParkingManager\ParkingManager.csproj" />
   </ItemGroup>
