@@ -135,6 +135,28 @@ public class ParkingUiTests
     }
 
     [Fact]
+    [Trait("Task", "10")]
+    public void ReportsTab_AfterExit_ShowsTotalsAndEnablesExport()
+    {
+        using var session = new AppSession();
+        var parking = session.LoginAsDemoOperator();
+        UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
+        UiHelpers.ClickWhenEnabled(parking, "EntryButton");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "1");
+        UiHelpers.ClickWhenEnabled(parking, "ExitButton");
+        UiHelpers.WaitForText(parking, "ActiveCountText", "0");
+
+        UiHelpers.Select(parking, "ReportsTab");
+        UiHelpers.ClickWhenEnabled(parking, "BuildReportButton");
+
+        UiHelpers.WaitForTextStart(parking, "ReportTotalsText", "Стоянок: 1 (завершено 1, на парковке 0) · выручка 60 ₽");
+        UiHelpers.WaitForText(parking, "ReportBookingsText", "Брони: 0 — заехали 0, неявки 0, отменены 0, ожидаются 0");
+        Assert.True(UiHelpers.Find(parking, "ExportExcelButton").IsEnabled);
+        Assert.True(UiHelpers.Find(parking, "ExportPdfButton").IsEnabled);
+        UiHelpers.Screenshot(parking, "11-reports");
+    }
+
+    [Fact]
     [Trait("Task", "8")]
     public void SettingsTab_ChecksDisabledShareAndSavesCapacity()
     {

@@ -76,6 +76,17 @@ public sealed class SettingsViewModel : ViewModelBase
         InUseText = $"Сейчас занято: обычных {regular.InUse}, для инвалидов {disabled.InUse}.";
     }
 
+    private static bool TryParseCount(string text, out int value)
+    {
+        return int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+    }
+
+    // Принимается и запятая, и точка: «75,5» и «75.5».
+    private static bool TryParsePrice(string text, out decimal value)
+    {
+        return decimal.TryParse(text.Trim().Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out value);
+    }
+
     private void Save()
     {
         if (!TryParseCount(RegularCapacityText, out var regularCapacity)
@@ -105,16 +116,5 @@ public sealed class SettingsViewModel : ViewModelBase
         {
             Message = ex.Message;
         }
-    }
-
-    private static bool TryParseCount(string text, out int value)
-    {
-        return int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
-    }
-
-    // Принимается и запятая, и точка: «75,5» и «75.5».
-    private static bool TryParsePrice(string text, out decimal value)
-    {
-        return decimal.TryParse(text.Trim().Replace(',', '.'), NumberStyles.Number, CultureInfo.InvariantCulture, out value);
     }
 }

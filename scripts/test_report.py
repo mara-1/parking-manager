@@ -34,10 +34,10 @@ CATEGORY_TITLES = {
 }
 
 OUTCOME_TITLES = {
-    "Passed": "✅ пройден",
-    "Failed": "❌ упал",
-    "NotRun": "⏸ не запускался",
-    "Skipped": "⏭ пропущен",
+    "Passed": "пройден",
+    "Failed": "упал",
+    "NotRun": "не запускался",
+    "Skipped": "пропущен",
 }
 
 TRAIT_RE = re.compile(r'\[Trait\(\s*"(?P<key>Category|Task)"\s*,\s*"(?P<value>[^"]+)"\s*\)\]')
@@ -197,20 +197,20 @@ def build_report(sources, results, tasks, title):
         failed = sum(r["outcome"] == "Failed" for r in group)
         kind = task.get("kind", "impl")
         if kind == "doc":
-            status = "📄 документ, проверяется преподавателем"
+            status = "документ, проверяется преподавателем"
         elif kind == "infra":
             group = results
             passed = total["Passed"]
             failed = total["Failed"]
-            status = "⚙️ инфраструктура тестирования (данный отчёт)"
+            status = "инфраструктура тестирования (данный отчёт)"
         elif not group:
-            status = "⏳ автотестов нет — задача ещё не реализована"
+            status = "автотестов нет — задача ещё не реализована"
         elif failed:
-            status = "❌ есть упавшие тесты"
+            status = "есть упавшие тесты"
         elif passed == len(group):
-            status = "✅ подтверждена"
+            status = "подтверждена"
         else:
-            status = "⚠️ часть тестов не запускалась"
+            status = "часть тестов не запускалась"
         if task.get("note"):
             status += f" — {task['note']}"
         count = len(group) if kind != "doc" else "—"
