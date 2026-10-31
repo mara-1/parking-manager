@@ -46,21 +46,8 @@ public class ParkingService : IParkingService
 
     public ParkingSession RegisterEntry(string carNumber, SpotCategory category)
     {
-        var normalized = CarNumberFormat.Normalize(carNumber);
-        if (normalized.Length == 0)
-        {
-            throw new ParkingOperationException("Не указан номер автомобиля.");
-        }
-
-        if (!CarNumberFormat.IsValid(normalized))
-        {
-            throw new ParkingOperationException($"Номер автомобиля указан неверно. Пример: {CarNumberFormat.Example}.");
-        }
-
-        if (_sessions.FindActiveByCarNumber(normalized) is not null)
-        {
-            throw new ParkingOperationException($"Автомобиль {normalized} уже находится на парковке.");
-        }
+        var normalized = CarNumberFormat.RequireValid(carNumber);
+        EnsureNotParked(normalized);
 
         var now = Now();
         BookingRules.ExpireNoShows(_bookings, now);
@@ -72,13 +59,7 @@ public class ParkingService : IParkingService
             category = booking.Category;
         }
 
-        var capacity = _categories.Find(category)
-            ?? throw new ParkingOperationException("Категория мест не настроена.");
-        var heldForOthers = _bookings.CountWaiting(category) - (booking is null ? 0 : 1);
-        if (_sessions.CountActive(category) + heldForOthers >= capacity.Capacity)
-        {
-            throw new ParkingOperationException($"Свободных мест нет ({category.ToDisplayName()}).");
-        }
+        EnsurePlaceAvailable(category, booking);
 
         var session = new ParkingSession
         {
@@ -129,6 +110,27 @@ public class ParkingService : IParkingService
         }
 
         return _sessions.GetByEntryPeriod(from, until, CarNumberFormat.Normalize(carNumberPart));
+    }
+
+    private void EnsureNotParked(string carNumber)
+    {
+        if (_sessions.FindActiveByCarNumber(carNumber) is not null)
+        {
+            throw new ParkingOperationException($"Автомобиль {carNumber} уже находится на парковке.");
+        }
+    }
+
+    // Свободное место есть, если занятые плюс удержанные бронями других автомобилей
+    // меньше вместимости. Своя бронь автомобиля место не отнимает: оно удержано для него.
+    private void EnsurePlaceAvailable(SpotCategory category, Booking? ownBooking)
+    {
+        var capacity = _categories.Find(category)
+            ?? throw new ParkingOperationException("Категория мест не настроена.");
+        var heldForOthers = _bookings.CountWaiting(category) - (ownBooking is null ? 0 : 1);
+        if (_sessions.CountActive(category) + heldForOthers >= capacity.Capacity)
+        {
+            throw new ParkingOperationException($"Свободных мест нет ({category.ToDisplayName()}).");
+        }
     }
 
     // Тариф берётся действующий: изменение тарифа применяется к ещё не оплаченным стоянкам.

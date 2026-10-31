@@ -29,38 +29,14 @@ public class BookingService : IBookingService
 
     public Booking CreateBooking(string carNumber, SpotCategory category, DateTime arrivalTime)
     {
-        var normalized = CarNumberFormat.Normalize(carNumber);
-        if (!CarNumberFormat.IsValid(normalized))
-        {
-            throw new ParkingOperationException($"Номер автомобиля указан неверно. Пример: {CarNumberFormat.Example}.");
-        }
-
+        var normalized = CarNumberFormat.RequireValid(carNumber);
         var now = ParkingClock.Now(_timeProvider);
-        if (arrivalTime.Date != now.Date)
-        {
-            throw new ParkingOperationException("Бронировать можно только на сегодня.");
-        }
+        EnsureArrivalToday(arrivalTime, now);
+        EnsureNotParked(normalized);
 
-        if (arrivalTime < now)
-        {
-            throw new ParkingOperationException("Время прибытия уже прошло.");
-        }
-
-        if (_parking.GetActiveSessions(normalized).Any(s => s.CarNumber == normalized))
-        {
-            throw new ParkingOperationException($"Автомобиль {normalized} уже находится на парковке.");
-        }
-
-        // GetOccupancy заодно снимает просроченные брони.
-        var free = _parking.GetOccupancy().FirstOrDefault(o => o.Category == category)?.Free ?? 0;
-
-        var existing = _bookings.FindWaitingByCarNumber(normalized);
-        if (existing is not null)
-        {
-            var time = existing.ArrivalTime.ToString("HH:mm", CultureInfo.InvariantCulture);
-            throw new ParkingOperationException($"У автомобиля {normalized} уже есть бронь на {time}.");
-        }
-
+        // GetOccupancy заодно снимает просроченные брони, поэтому вызывается до проверки броней.
+        var free = FreePlaces(category);
+        EnsureNoWaitingBooking(normalized);
         if (free <= 0)
         {
             throw new ParkingOperationException($"Свободных мест для брони нет ({category.ToDisplayName()}).");
@@ -91,5 +67,41 @@ public class BookingService : IBookingService
 
         booking.Status = BookingStatus.Cancelled;
         _bookings.Update(booking);
+    }
+
+    private static void EnsureArrivalToday(DateTime arrivalTime, DateTime now)
+    {
+        if (arrivalTime.Date != now.Date)
+        {
+            throw new ParkingOperationException("Бронировать можно только на сегодня.");
+        }
+
+        if (arrivalTime < now)
+        {
+            throw new ParkingOperationException("Время прибытия уже прошло.");
+        }
+    }
+
+    private void EnsureNotParked(string carNumber)
+    {
+        if (_parking.GetActiveSessions(carNumber).Any(s => s.CarNumber == carNumber))
+        {
+            throw new ParkingOperationException($"Автомобиль {carNumber} уже находится на парковке.");
+        }
+    }
+
+    private int FreePlaces(SpotCategory category)
+    {
+        return _parking.GetOccupancy().FirstOrDefault(o => o.Category == category)?.Free ?? 0;
+    }
+
+    private void EnsureNoWaitingBooking(string carNumber)
+    {
+        var existing = _bookings.FindWaitingByCarNumber(carNumber);
+        if (existing is not null)
+        {
+            var time = existing.ArrivalTime.ToString("HH:mm", CultureInfo.InvariantCulture);
+            throw new ParkingOperationException($"У автомобиля {carNumber} уже есть бронь на {time}.");
+        }
     }
 }
