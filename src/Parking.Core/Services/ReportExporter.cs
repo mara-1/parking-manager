@@ -36,37 +36,7 @@ public sealed class ReportExporter : IReportExporter
         // Бесплатная лицензия QuestPDF для некоммерческих и учебных проектов.
         QuestPDF.Settings.License = LicenseType.Community;
 
-        Document.Create(container => container.Page(page =>
-        {
-            page.Size(PageSizes.A4);
-            page.Margin(1.5f, Unit.Centimetre);
-            page.DefaultTextStyle(style => style.FontSize(10));
-
-            page.Header().Column(header =>
-            {
-                header.Item().Text($"Отчёт о работе парковки за {ReportText.Period(report)}").FontSize(16).SemiBold();
-                header.Item().Text($"ParkingManager. Сформирован {Created(report)}").FontColor(Colors.Grey.Darken1);
-            });
-
-            page.Content().PaddingVertical(12).Column(column =>
-            {
-                column.Spacing(10);
-                column.Item().Text("Итоги").FontSize(12).SemiBold();
-                column.Item().Element(c => ComposeSummary(c, report));
-                column.Item().Text("По категориям мест").FontSize(12).SemiBold();
-                column.Item().Element(c => ComposeCategories(c, report));
-                column.Item().Text("По дням").FontSize(12).SemiBold();
-                column.Item().Element(c => ComposeDays(c, report));
-            });
-
-            page.Footer().AlignCenter().Text(text =>
-            {
-                text.Span("Страница ");
-                text.CurrentPageNumber();
-                text.Span(" из ");
-                text.TotalPages();
-            });
-        })).GeneratePdf(path);
+        Document.Create(container => container.Page(page => ComposePage(page, report))).GeneratePdf(path);
     }
 
     private static void FillSummary(IXLWorksheet sheet, PeriodReport report)
@@ -101,7 +71,7 @@ public sealed class ReportExporter : IReportExporter
 
     private static void FillCategories(IXLWorksheet sheet, PeriodReport report)
     {
-        string[] titles = ["Категория мест", "Стоянок", "Завершено", "Выручка, руб.", "Средняя длительность"];
+        var titles = new[] { "Категория мест", "Стоянок", "Завершено", "Выручка, руб.", "Средняя длительность" };
         for (var column = 0; column < titles.Length; column++)
         {
             sheet.Cell(1, column + 1).Value = titles[column];
@@ -166,87 +136,132 @@ public sealed class ReportExporter : IReportExporter
         yield return ("Ожидаются", report.BookingsWaiting);
     }
 
-    private static void ComposeSummary(IContainer container, PeriodReport report)
+    // Шрифт по умолчанию — Lato: он входит в пакет QuestPDF и содержит кириллицу,
+    // поэтому PDF выглядит одинаково на любом компьютере.
+    private static void ComposePage(PageDescriptor page, PeriodReport report)
     {
-        container.Table(table =>
+        page.Size(PageSizes.A4);
+        page.Margin(1.5f, Unit.Centimetre);
+        page.DefaultTextStyle(style => style.FontSize(10));
+        page.Header().Element(c => ComposeHeader(c, report));
+        page.Content().PaddingVertical(12).Element(c => ComposeContent(c, report));
+        page.Footer().AlignCenter().Element(ComposeFooter);
+    }
+
+    private static void ComposeHeader(IContainer container, PeriodReport report)
+    {
+        container.Column(header =>
         {
-            table.ColumnsDefinition(columns =>
-            {
-                columns.RelativeColumn(3);
-                columns.RelativeColumn(2);
-            });
-
-            foreach (var (label, value) in SummaryNumbers(report))
-            {
-                table.Cell().Element(BodyCell).Text(label);
-                table.Cell().Element(BodyCell).AlignRight().Text(value.ToString(CultureInfo.InvariantCulture));
-            }
-
-            table.Cell().Element(BodyCell).Text("Выручка");
-            table.Cell().Element(BodyCell).AlignRight().Text(ReportText.Money(report.Revenue)).SemiBold();
-            table.Cell().Element(BodyCell).Text("Средняя длительность стоянки");
-            table.Cell().Element(BodyCell).AlignRight().Text(ReportText.Duration(report.AverageStay));
+            header.Item().Text($"Отчёт о работе парковки за {ReportText.Period(report)}").FontSize(16).SemiBold();
+            header.Item().Text($"ParkingManager. Сформирован {Created(report)}").FontColor(Colors.Grey.Darken1);
         });
     }
 
-    private static void ComposeCategories(IContainer container, PeriodReport report)
+    private static void ComposeContent(IContainer container, PeriodReport report)
+    {
+        container.Column(column =>
+        {
+            column.Spacing(10);
+            AddSection(column, "Итоги", new PdfTable(
+                new List<float> { 3, 2 },
+                new List<string>(),
+                SummaryRows(report)));
+            AddSection(column, "По категориям мест", new PdfTable(
+                new List<float> { 3, 2, 2, 2, 2 },
+                new List<string> { "Категория мест", "Стоянок", "Завершено", "Выручка", "Ср. длительность" },
+                CategoryRows(report)));
+            AddSection(column, "По дням", new PdfTable(
+                new List<float> { 2, 2, 3 },
+                new List<string> { "Дата", "Въездов", "Выручка" },
+                DayRows(report)));
+        });
+    }
+
+    private static void ComposeFooter(IContainer container)
+    {
+        container.Text(text =>
+        {
+            text.Span("Страница ");
+            text.CurrentPageNumber();
+            text.Span(" из ");
+            text.TotalPages();
+        });
+    }
+
+    private static void AddSection(ColumnDescriptor column, string title, PdfTable table)
+    {
+        column.Item().Text(title).FontSize(12).SemiBold();
+        column.Item().Element(c => ComposeTable(c, table));
+    }
+
+    // Таблица PDF: первый столбец — подписи слева, остальные — числа справа.
+    private static void ComposeTable(IContainer container, PdfTable data)
     {
         container.Table(table =>
         {
             table.ColumnsDefinition(columns =>
             {
-                columns.RelativeColumn(3);
-                columns.RelativeColumn(2);
-                columns.RelativeColumn(2);
-                columns.RelativeColumn(2);
-                columns.RelativeColumn(2);
+                foreach (var width in data.Widths)
+                {
+                    columns.RelativeColumn(width);
+                }
             });
 
-            table.Header(header =>
+            if (data.Headers.Count > 0)
             {
-                header.Cell().Element(HeaderCell).Text("Категория мест").SemiBold();
-                header.Cell().Element(HeaderCell).AlignRight().Text("Стоянок").SemiBold();
-                header.Cell().Element(HeaderCell).AlignRight().Text("Завершено").SemiBold();
-                header.Cell().Element(HeaderCell).AlignRight().Text("Выручка").SemiBold();
-                header.Cell().Element(HeaderCell).AlignRight().Text("Ср. длительность").SemiBold();
-            });
+                table.Header(header =>
+                {
+                    for (var i = 0; i < data.Headers.Count; i++)
+                    {
+                        Align(HeaderCell(header.Cell()), i).Text(data.Headers[i]).SemiBold();
+                    }
+                });
+            }
 
-            foreach (var category in report.Categories)
+            foreach (var row in data.Rows)
             {
-                table.Cell().Element(BodyCell).Text(category.Category.ToDisplayName());
-                table.Cell().Element(BodyCell).AlignRight().Text(Count(category.Sessions));
-                table.Cell().Element(BodyCell).AlignRight().Text(Count(category.Finished));
-                table.Cell().Element(BodyCell).AlignRight().Text(ReportText.Money(category.Revenue));
-                table.Cell().Element(BodyCell).AlignRight().Text(ReportText.Duration(category.AverageStay));
+                for (var i = 0; i < row.Length; i++)
+                {
+                    Align(BodyCell(table.Cell()), i).Text(row[i]);
+                }
             }
         });
     }
 
-    private static void ComposeDays(IContainer container, PeriodReport report)
+    private static List<string[]> SummaryRows(PeriodReport report)
     {
-        container.Table(table =>
-        {
-            table.ColumnsDefinition(columns =>
-            {
-                columns.RelativeColumn(2);
-                columns.RelativeColumn(2);
-                columns.RelativeColumn(3);
-            });
+        var rows = SummaryNumbers(report)
+            .Select(n => new[] { n.Label, Count(n.Value) })
+            .ToList();
+        rows.Add(new[] { "Выручка", ReportText.Money(report.Revenue) });
+        rows.Add(new[] { "Средняя длительность стоянки", ReportText.Duration(report.AverageStay) });
+        return rows;
+    }
 
-            table.Header(header =>
+    private static List<string[]> CategoryRows(PeriodReport report)
+    {
+        return report.Categories
+            .Select(c => new[]
             {
-                header.Cell().Element(HeaderCell).Text("Дата").SemiBold();
-                header.Cell().Element(HeaderCell).AlignRight().Text("Въездов").SemiBold();
-                header.Cell().Element(HeaderCell).AlignRight().Text("Выручка").SemiBold();
-            });
+                c.Category.ToDisplayName(),
+                Count(c.Sessions),
+                Count(c.Finished),
+                ReportText.Money(c.Revenue),
+                ReportText.Duration(c.AverageStay),
+            })
+            .ToList();
+    }
 
-            foreach (var day in report.Days)
-            {
-                table.Cell().Element(BodyCell).Text(ReportText.Day(day.Date));
-                table.Cell().Element(BodyCell).AlignRight().Text(Count(day.Entries));
-                table.Cell().Element(BodyCell).AlignRight().Text(ReportText.Money(day.Revenue));
-            }
-        });
+    private static List<string[]> DayRows(PeriodReport report)
+    {
+        return report.Days
+            .Select(d => new[] { ReportText.Day(d.Date), Count(d.Entries), ReportText.Money(d.Revenue) })
+            .ToList();
+    }
+
+    private static IContainer Align(IContainer cell, int column)
+    {
+        return column == 0 ? cell : cell.AlignRight();
     }
 
     private static IContainer HeaderCell(IContainer container)
@@ -267,5 +282,22 @@ public sealed class ReportExporter : IReportExporter
     private static string Count(int value)
     {
         return value.ToString(CultureInfo.InvariantCulture);
+    }
+
+    // Данные таблицы PDF: относительные ширины столбцов, заголовки (могут отсутствовать) и строки.
+    private sealed class PdfTable
+    {
+        public PdfTable(IReadOnlyList<float> widths, IReadOnlyList<string> headers, IReadOnlyList<string[]> rows)
+        {
+            Widths = widths;
+            Headers = headers;
+            Rows = rows;
+        }
+
+        public IReadOnlyList<float> Widths { get; }
+
+        public IReadOnlyList<string> Headers { get; }
+
+        public IReadOnlyList<string[]> Rows { get; }
     }
 }

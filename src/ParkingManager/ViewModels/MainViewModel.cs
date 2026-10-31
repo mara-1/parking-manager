@@ -187,9 +187,20 @@ public sealed class MainViewModel : ViewModelBase
             Sessions.Add(new SessionViewModel(session, now, _parkingService.CalculateAmount(session)));
         }
 
-        SelectedSession = Sessions.FirstOrDefault(s => s.Id == keepId)
-            ?? (Sessions.Count == 1 && SearchText.Length > 0 ? Sessions[0] : null);
+        SelectedSession = ChooseSelection(keepId);
         CommandManager.InvalidateRequerySuggested();
+    }
+
+    // Прежнее выделение сохраняется; если поиск нашёл ровно один автомобиль, выделяется он.
+    private SessionViewModel? ChooseSelection(int? keepId)
+    {
+        var kept = Sessions.FirstOrDefault(s => s.Id == keepId);
+        if (kept is not null)
+        {
+            return kept;
+        }
+
+        return Sessions.Count == 1 && SearchText.Length > 0 ? Sessions[0] : null;
     }
 
     private bool CanRegisterEntry()

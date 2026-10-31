@@ -89,4 +89,21 @@ public class SettingsServiceTests
 
         Assert.Equal(80m, _parking.RegisterExit(session.Id).Amount);
     }
+
+    [Fact]
+    public void UpdateCapacities_Negative_Throws()
+    {
+        var error = Assert.Throws<ParkingOperationException>(() => _settings.UpdateCapacities(-1, 10));
+
+        Assert.Equal("Вместимость не может быть отрицательной.", error.Message);
+        Assert.Equal(90, _categories.Find(SpotCategory.Regular)!.Capacity);
+    }
+
+    [Fact]
+    public void UpdatePrice_UnknownCategory_Throws()
+    {
+        var error = Assert.Throws<ParkingOperationException>(() => _settings.UpdatePrice((SpotCategory)7, 50m));
+
+        Assert.Equal("Тариф категории не настроен.", error.Message);
+    }
 }

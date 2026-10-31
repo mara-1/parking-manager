@@ -12,6 +12,7 @@ public class MainViewModelTests
 {
     private readonly FakeAuthService _authService = new FakeAuthService();
     private readonly ManualTimeProvider _clock = new ManualTimeProvider(new DateTime(2026, 10, 24, 9, 0, 0));
+    private readonly ParkingService _parking;
     private readonly MainViewModel _viewModel;
 
     public MainViewModelTests()
@@ -21,13 +22,13 @@ public class MainViewModelTests
         var tariffs = new FakeTariffRepository(regular: 60m, disabled: 0m);
         var bookings = new FakeBookingRepository();
         var sessions = new FakeSessionRepository();
-        var service = new ParkingService(categories, sessions, tariffs, bookings, _clock);
+        _parking = new ParkingService(categories, sessions, tariffs, bookings, _clock);
         var reports = new ReportsViewModel(new ReportService(sessions, bookings, _clock), new FakeReportExporter(), new FakeSaveFileDialog(null), _clock);
         _viewModel = new MainViewModel(
             _authService,
-            service,
-            new SettingsService(categories, tariffs, service),
-            new BookingService(bookings, service, _clock),
+            _parking,
+            new SettingsService(categories, tariffs, _parking),
+            new BookingService(bookings, _parking, _clock),
             reports,
             _clock);
     }
@@ -202,5 +203,53 @@ public class MainViewModelTests
         Assert.Equal(1, _viewModel.BookedCount);
         var regular = _viewModel.Occupancy.Single(o => o.Category == SpotCategory.Regular);
         Assert.Equal(CellState.Booked, regular.Cells[0]);
+    }
+
+    [Fact]
+    public void EntryCategory_SwitchToDisabledAndBack_UpdatesBothFlags()
+    {
+        _viewModel.IsDisabledCategory = true;
+        _viewModel.IsDisabledCategory = true;
+        _viewModel.IsRegularCategory = false;
+
+        Assert.Equal(SpotCategory.Disabled, _viewModel.EntryCategory);
+        Assert.False(_viewModel.IsRegularCategory);
+
+        _viewModel.IsRegularCategory = true;
+
+        Assert.Equal(SpotCategory.Regular, _viewModel.EntryCategory);
+        Assert.False(_viewModel.IsDisabledCategory);
+    }
+
+    [Fact]
+    [Trait("Task", "7")]
+    public void RegisterExit_AlreadyRegisteredElsewhere_ShowsError()
+    {
+        _viewModel.CarNumber = "А123ВС73";
+        _viewModel.RegisterEntryCommand.Execute(null);
+        var selected = _viewModel.SelectedSession!;
+        _parking.RegisterExit(selected.Id);
+
+        _viewModel.RegisterExitCommand.Execute(null);
+
+        Assert.Equal("Выезд автомобиля А123ВС73 уже зарегистрирован.", _viewModel.StatusMessage);
+    }
+
+    [Fact]
+    [Trait("Task", "7")]
+    public void RegisterExit_NothingSelected_DoesNothing()
+    {
+        _viewModel.RegisterExitCommand.Execute(null);
+
+        Assert.Equal(string.Empty, _viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public void Tabs_AreCreated()
+    {
+        Assert.NotNull(_viewModel.History);
+        Assert.NotNull(_viewModel.Settings);
+        Assert.NotNull(_viewModel.Bookings);
+        Assert.NotNull(_viewModel.Reports);
     }
 }

@@ -60,7 +60,7 @@ jobs:
 
       # UI-тесты (Category=UI) запускаются отдельной задачей ui-test.
       - name: Модульные и интеграционные тесты с покрытием
-        run: dotnet test -c Release --filter "Category!=UI" --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
+        run: dotnet test -c Release --filter "Category!=UI" --collect:"XPlat Code Coverage" --settings tests/coverage.runsettings --logger trx --results-directory TestResults
 
       - name: Отчёт о покрытии кода
         if: always()

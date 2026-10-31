@@ -73,4 +73,16 @@ public class LoginViewModelTests
         Assert.Equal(string.Empty, _viewModel.ErrorMessage);
         Assert.NotNull(_authService.CurrentOperator);
     }
+
+    [Fact]
+    public void Login_ValidCredentialsWithoutSubscribers_LogsIn()
+    {
+        _viewModel.Login = FakeAuthService.ValidLogin;
+        _viewModel.Password = FakeAuthService.ValidPassword;
+
+        _viewModel.LoginCommand.Execute(null);
+
+        Assert.NotNull(_authService.CurrentOperator);
+        Assert.Equal(string.Empty, _viewModel.ErrorMessage);
+    }
 }

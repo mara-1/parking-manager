@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Threading;
 using ParkingManager.ViewModels;
 
 namespace ParkingManager.Views;
 
+[ExcludeFromCodeCoverage(Justification = "Окно: проверяется UI-тестами (FlaUI), покрытие которых не собирается.")]
 public partial class ParkingWindow : Window
 {
     private readonly DispatcherTimer _refreshTimer;

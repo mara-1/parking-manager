@@ -65,4 +65,27 @@ public class SettingsViewModelTests
 
         Assert.Equal("Мест для инвалидов должно быть не менее 10 % от общего числа: не менее 10.", _viewModel.Message);
     }
+
+    [Fact]
+    public void Save_PriceNotANumber_ShowsErrorAndSavesNothing()
+    {
+        _viewModel.RegularPriceText = "шестьдесят";
+
+        _viewModel.SaveCommand.Execute(null);
+
+        Assert.Equal("Стоимость часа должна быть числом, например 60 или 75,5.", _viewModel.Message);
+        Assert.Equal(60m, _tariffs.Find(SpotCategory.Regular)!.PricePerHour);
+    }
+
+    [Fact]
+    public void Texts_SetNull_BecomeEmpty()
+    {
+        _viewModel.RegularCapacityText = null!;
+        _viewModel.DisabledCapacityText = null!;
+        _viewModel.RegularPriceText = null!;
+        _viewModel.DisabledPriceText = null!;
+
+        Assert.Equal(string.Empty, _viewModel.RegularCapacityText + _viewModel.DisabledCapacityText + _viewModel.RegularPriceText + _viewModel.DisabledPriceText);
+        Assert.Equal("Сейчас занято: обычных 0, для инвалидов 0.", _viewModel.InUseText);
+    }
 }

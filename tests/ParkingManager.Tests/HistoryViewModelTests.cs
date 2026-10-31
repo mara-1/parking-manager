@@ -65,4 +65,43 @@ public class HistoryViewModelTests
         Assert.Empty(history.Sessions);
         Assert.Equal("Найдено стоянок: 0 · сумма 0 ₽", history.Summary);
     }
+
+    [Fact]
+    public void Show_EndBeforeStart_ShowsMessage()
+    {
+        var history = new HistoryViewModel(_service, _clock)
+        {
+            From = new DateTime(2026, 10, 25),
+            To = new DateTime(2026, 10, 20),
+        };
+
+        history.Show();
+
+        Assert.Equal("Дата окончания периода раньше даты начала.", history.Summary);
+        Assert.Empty(history.Sessions);
+    }
+
+    [Fact]
+    public void Show_NoDates_UsesToday()
+    {
+        _service.RegisterEntry("А123ВС73", SpotCategory.Regular);
+        var history = new HistoryViewModel(_service, _clock) { From = null, To = null, SearchText = null! };
+
+        history.ShowCommand.Execute(null);
+
+        Assert.Single(history.Sessions);
+        Assert.Equal(string.Empty, history.SearchText);
+    }
+
+    [Fact]
+    public void SearchText_Changed_RaisesPropertyChanged()
+    {
+        var history = new HistoryViewModel(_service, _clock);
+        var changed = new List<string?>();
+        history.PropertyChanged += (sender, args) => changed.Add(args.PropertyName);
+
+        history.SearchText = "777";
+
+        Assert.Equal(new List<string?> { nameof(HistoryViewModel.SearchText) }, changed);
+    }
 }
