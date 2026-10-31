@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using ParkingManager.ViewModels;
 
 namespace ParkingManager.Views;
 
+[ExcludeFromCodeCoverage(Justification = "Окно: проверяется UI-тестами (FlaUI), покрытие которых не собирается.")]
 public partial class LoginWindow : Window
 {
     private readonly LoginViewModel _viewModel;
