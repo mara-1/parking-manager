@@ -19,7 +19,9 @@
       <TextBlock Text="Свободно для инвалидов: " />
       <TextBlock AutomationProperties.AutomationId="DisabledFreeText" Text="{Binding DisabledFree}" FontWeight="SemiBold" Margin="0,0,16,0" />
       <TextBlock Text="На парковке: " />
-      <TextBlock AutomationProperties.AutomationId="ActiveCountText" Text="{Binding ActiveCount}" FontWeight="SemiBold" />
+      <TextBlock AutomationProperties.AutomationId="ActiveCountText" Text="{Binding ActiveCount}" FontWeight="SemiBold" Margin="0,0,16,0" />
+      <TextBlock Text="Брони: " />
+      <TextBlock AutomationProperties.AutomationId="BookedCountText" Text="{Binding BookedCount}" FontWeight="SemiBold" />
     </StackPanel>
 
     <TextBlock DockPanel.Dock="Bottom" AutomationProperties.AutomationId="StatusMessageText" Text="{Binding StatusMessage}" Foreground="DimGray" Margin="0,12,0,0" />
@@ -93,6 +95,43 @@
             </DataGrid.Columns>
           </DataGrid>
         </Grid>
+      </TabItem>
+
+      <!-- Вкладка «Брони»: брони на сегодня, правило неявки 15 минут -->
+      <TabItem Header="Брони" AutomationProperties.AutomationId="BookingsTab">
+        <DockPanel Margin="12" DataContext="{Binding Bookings}">
+          <Border DockPanel.Dock="Top" Padding="12" Margin="0,0,0,12" BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="6">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="Номер:" VerticalAlignment="Center" Margin="0,0,8,0" />
+              <TextBox AutomationProperties.AutomationId="BookingCarNumberBox" Width="140" Padding="4" VerticalAlignment="Center"
+                       Text="{Binding CarNumber, UpdateSourceTrigger=PropertyChanged}" />
+              <RadioButton Content="Обычное" GroupName="BookingCategory" IsChecked="{Binding IsRegularCategory}"
+                           VerticalAlignment="Center" Margin="12,0,0,0" />
+              <RadioButton AutomationProperties.AutomationId="BookingDisabledRadio" Content="Для инвалидов" GroupName="BookingCategory"
+                           IsChecked="{Binding IsDisabledCategory}" VerticalAlignment="Center" Margin="8,0,0,0" />
+              <TextBlock Text="Прибытие (ЧЧ:ММ):" VerticalAlignment="Center" Margin="16,0,8,0" />
+              <TextBox AutomationProperties.AutomationId="BookingTimeBox" Width="70" Padding="4" VerticalAlignment="Center"
+                       Text="{Binding ArrivalText, UpdateSourceTrigger=PropertyChanged}" />
+              <Button AutomationProperties.AutomationId="CreateBookingButton" Content="Забронировать" Command="{Binding CreateCommand}"
+                      Padding="12,6" Margin="16,0,0,0" />
+              <Button AutomationProperties.AutomationId="CancelBookingButton" Content="Отменить бронь" Command="{Binding CancelCommand}"
+                      Padding="12,6" Margin="8,0,0,0" />
+            </StackPanel>
+          </Border>
+          <TextBlock DockPanel.Dock="Top" AutomationProperties.AutomationId="BookingMessageText" Text="{Binding Message}"
+                     FontWeight="SemiBold" Margin="0,0,0,8" />
+          <TextBlock DockPanel.Dock="Bottom" Foreground="Gray" Margin="0,8,0,0"
+                     Text="Бронь удерживает одно место категории. Если автомобиль не приехал в течение 15 минут после назначенного времени, бронь снимается автоматически." TextWrapping="Wrap" />
+          <DataGrid AutomationProperties.AutomationId="BookingsGrid" ItemsSource="{Binding Bookings}" SelectedItem="{Binding SelectedBooking}"
+                    AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" HeadersVisibility="Column" CanUserAddRows="False">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Номер" Binding="{Binding CarNumber}" Width="140" />
+              <DataGridTextColumn Header="Категория" Binding="{Binding CategoryName}" Width="140" />
+              <DataGridTextColumn Header="Прибытие" Binding="{Binding ArrivalText}" Width="100" />
+              <DataGridTextColumn Header="Статус" Binding="{Binding StatusText}" Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
+        </DockPanel>
       </TabItem>
 
       <!-- Вкладка «Схема занятости»: квадратик = место, заполнение по порядку -->

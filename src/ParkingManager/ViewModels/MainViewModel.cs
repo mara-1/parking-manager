@@ -18,7 +18,12 @@ public sealed class MainViewModel : ViewModelBase
     private string _searchText = string.Empty;
     private string _statusMessage = string.Empty;
 
-    public MainViewModel(IAuthService authService, IParkingService parkingService, ISettingsService settingsService, TimeProvider timeProvider)
+    public MainViewModel(
+        IAuthService authService,
+        IParkingService parkingService,
+        ISettingsService settingsService,
+        IBookingService bookingService,
+        TimeProvider timeProvider)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _parkingService = parkingService ?? throw new ArgumentNullException(nameof(parkingService));
@@ -29,6 +34,8 @@ public sealed class MainViewModel : ViewModelBase
         History = new HistoryViewModel(parkingService, timeProvider);
         Settings = new SettingsViewModel(settingsService);
         Settings.Saved += (sender, args) => Refresh(null);
+        Bookings = new BookingsViewModel(bookingService, timeProvider);
+        Bookings.Changed += (sender, args) => Refresh(null);
         RegisterEntryCommand = new RelayCommand(RegisterEntry, CanRegisterEntry);
         RegisterExitCommand = new RelayCommand(RegisterExit, CanRegisterExit);
         Refresh(null);
@@ -43,6 +50,10 @@ public sealed class MainViewModel : ViewModelBase
     public HistoryViewModel History { get; }
 
     public SettingsViewModel Settings { get; }
+
+    public BookingsViewModel Bookings { get; }
+
+    public int BookedCount => Occupancy.Sum(o => o.Booked);
 
     public int RegularFree => FreeOf(SpotCategory.Regular);
 
@@ -137,7 +148,9 @@ public sealed class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(RegularFree));
         OnPropertyChanged(nameof(DisabledFree));
         OnPropertyChanged(nameof(ActiveCount));
+        OnPropertyChanged(nameof(BookedCount));
         LoadSessions(selectSessionId);
+        Bookings.Load();
     }
 
     private void SetEntryCategory(SpotCategory category)
@@ -177,7 +190,9 @@ public sealed class MainViewModel : ViewModelBase
 
     private bool CanRegisterEntry()
     {
-        return !string.IsNullOrWhiteSpace(CarNumber) && FreeOf(_entryCategory) > 0;
+        // Наличие мест проверяет служба: автомобиль с бронью может заехать,
+        // даже когда свободных мест нет, — для него место удержано.
+        return !string.IsNullOrWhiteSpace(CarNumber);
     }
 
     private void RegisterEntry()
