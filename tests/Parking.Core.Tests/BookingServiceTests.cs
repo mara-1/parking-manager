@@ -148,6 +148,39 @@ public class BookingServiceTests
             second => Assert.Equal("Е777КХ73", second.CarNumber));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("12345")]
+    public void CreateBooking_EmptyOrWrongNumber_Throws(string carNumber)
+    {
+        Assert.Throws<ParkingOperationException>(() => _service.CreateBooking(carNumber, SpotCategory.Regular, At(10, 0)));
+        Assert.Empty(_bookings.All);
+    }
+
+    [Fact]
+    public void CreateBooking_CarAlreadyParked_Throws()
+    {
+        _parking.RegisterEntry("Е777КХ73", SpotCategory.Regular);
+
+        var error = Assert.Throws<ParkingOperationException>(() => _service.CreateBooking("е777кх73", SpotCategory.Regular, At(10, 0)));
+
+        Assert.Equal("Автомобиль Е777КХ73 уже находится на парковке.", error.Message);
+    }
+
+    [Fact]
+    public void CreateBooking_UnknownCategory_NoPlaces()
+    {
+        Assert.Throws<ParkingOperationException>(() => _service.CreateBooking("Е777КХ73", (SpotCategory)7, At(10, 0)));
+    }
+
+    [Fact]
+    public void CancelBooking_Unknown_Throws()
+    {
+        var error = Assert.Throws<ParkingOperationException>(() => _service.CancelBooking(42));
+
+        Assert.Equal("Бронь не найдена.", error.Message);
+    }
+
     private static DateTime At(int hour, int minute)
     {
         return new DateTime(2026, 10, 24, hour, minute, 0);

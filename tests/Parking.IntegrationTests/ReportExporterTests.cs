@@ -72,6 +72,41 @@ public sealed class ReportExporterTests : IDisposable
         }
     }
 
+    [Fact]
+    public void ExportToExcel_EmptyDay_WritesZerosAndSingleDate()
+    {
+        var path = TempFile("xlsx");
+
+        _exporter.ExportToExcel(EmptyReport(), path);
+
+        using var workbook = new XLWorkbook(path);
+        Assert.Equal("Отчёт о работе парковки за 24.10.2026", workbook.Worksheet(ReportExporter.SummarySheet).Cell(1, 1).GetString());
+        var categories = workbook.Worksheet(ReportExporter.CategoriesSheet);
+        Assert.Equal("Итого", categories.Cell(2, 1).GetString());
+        Assert.Equal(0, categories.Cell(2, 2).GetDouble());
+    }
+
+    [Fact]
+    public void ExportToPdf_EmptyDay_CreatesPdfDocument()
+    {
+        var path = TempFile("pdf");
+
+        _exporter.ExportToPdf(EmptyReport(), path);
+
+        Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(File.ReadAllBytes(path), 0, 4));
+    }
+
+    // Отчёт за день без стоянок: таблицы категорий и дней пустые.
+    private static PeriodReport EmptyReport()
+    {
+        return new PeriodReport
+        {
+            From = new DateTime(2026, 10, 24),
+            To = new DateTime(2026, 10, 24),
+            CreatedAt = new DateTime(2026, 10, 24, 20, 0, 0),
+        };
+    }
+
     private static PeriodReport SampleReport()
     {
         return new PeriodReport

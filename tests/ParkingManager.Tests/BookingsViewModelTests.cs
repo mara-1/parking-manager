@@ -96,4 +96,67 @@ public class BookingsViewModelTests
 
         Assert.Equal("снята — неявка", _viewModel.Bookings[0].StatusText);
     }
+
+    [Fact]
+    public void Category_SwitchToDisabledAndBack_UpdatesBothFlags()
+    {
+        _viewModel.IsDisabledCategory = true;
+        _viewModel.IsDisabledCategory = true;
+        _viewModel.IsRegularCategory = false;
+
+        Assert.True(_viewModel.IsDisabledCategory);
+        Assert.False(_viewModel.IsRegularCategory);
+
+        _viewModel.IsRegularCategory = true;
+
+        Assert.True(_viewModel.IsRegularCategory);
+        Assert.False(_viewModel.IsDisabledCategory);
+    }
+
+    [Fact]
+    public void Create_WrongNumber_ShowsServiceMessage()
+    {
+        _viewModel.CarNumber = "12345";
+        _viewModel.ArrivalText = "10:00";
+
+        _viewModel.CreateCommand.Execute(null);
+
+        Assert.Equal("Номер автомобиля указан неверно. Пример: А123ВС73.", _viewModel.Message);
+        Assert.Empty(_viewModel.Bookings);
+    }
+
+    [Fact]
+    public void Cancel_BookingExpiredMeanwhile_ShowsServiceMessage()
+    {
+        _viewModel.CarNumber = "Е777КХ73";
+        _viewModel.ArrivalText = "10:00";
+        _viewModel.CreateCommand.Execute(null);
+        _viewModel.SelectedBooking = _viewModel.Bookings[0];
+        _clock.Advance(TimeSpan.FromMinutes(80));
+
+        _viewModel.CancelCommand.Execute(null);
+
+        Assert.Equal("Бронь уже не активна.", _viewModel.Message);
+    }
+
+    [Fact]
+    public void Cancel_NothingSelected_DoesNothing()
+    {
+        _viewModel.CancelCommand.Execute(null);
+
+        Assert.Equal(string.Empty, _viewModel.Message);
+    }
+
+    [Fact]
+    public void Constructor_LateEvening_SuggestsEndOfDay()
+    {
+        var lateClock = new ManualTimeProvider(new DateTime(2026, 10, 24, 23, 45, 0));
+        var bookings = new FakeBookingRepository();
+        var parking = new ParkingService(new FakeCategoryRepository(regular: 5, disabled: 1), new FakeSessionRepository(), new FakeTariffRepository(), bookings, lateClock);
+
+        var viewModel = new BookingsViewModel(new BookingService(bookings, parking, lateClock), lateClock) { ArrivalText = null! };
+
+        Assert.Equal(string.Empty, viewModel.ArrivalText);
+        Assert.Equal("23:59", new BookingsViewModel(new BookingService(bookings, parking, lateClock), lateClock).ArrivalText);
+    }
 }

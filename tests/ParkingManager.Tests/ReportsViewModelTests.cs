@@ -108,6 +108,30 @@ public class ReportsViewModelTests
         Assert.Equal("Не удалось сохранить отчёт: файл открыт в другой программе", viewModel.Message);
     }
 
+    [Fact]
+    public void ExportExcel_NoAccess_ShowsError()
+    {
+        _exporter.ErrorToThrow = new UnauthorizedAccessException("доступ запрещён");
+        var viewModel = Create(path: ExcelPath);
+
+        viewModel.ExportExcelCommand.Execute(null);
+
+        Assert.Equal("Нет доступа к файлу: доступ запрещён", viewModel.Message);
+    }
+
+    [Fact]
+    public void Build_NoDates_UsesToday()
+    {
+        var viewModel = Create(path: null);
+        viewModel.From = null;
+        viewModel.To = null;
+
+        viewModel.BuildCommand.Execute(null);
+
+        Assert.Single(viewModel.Days);
+        Assert.Equal("24.10.2026", viewModel.Days[0].DateText);
+    }
+
     private ReportsViewModel Create(string? path)
     {
         return new ReportsViewModel(_reports, _exporter, new FakeSaveFileDialog(path), _clock);
