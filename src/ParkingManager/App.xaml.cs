@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Windows;
+using System.Windows.Markup;
 using Parking.Core;
 using ParkingManager.Services;
 using ParkingManager.ViewModels;
@@ -21,6 +23,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        UseRussianFormats();
 
         // Окно входа показывается до главного окна, поэтому приложение
         // не должно завершаться при его закрытии.
@@ -47,6 +50,20 @@ public partial class App : Application
     {
         _core?.Dispose();
         base.OnExit(e);
+    }
+
+    // Даты и числа в окнах (в том числе в календаре DatePicker) показываются
+    // в русском формате независимо от языка Windows.
+    private static void UseRussianFormats()
+    {
+        var russian = CultureInfo.GetCultureInfo("ru-RU");
+        CultureInfo.DefaultThreadCurrentCulture = russian;
+        CultureInfo.DefaultThreadCurrentUICulture = russian;
+        Thread.CurrentThread.CurrentCulture = russian;
+        Thread.CurrentThread.CurrentUICulture = russian;
+        FrameworkElement.LanguageProperty.OverrideMetadata(
+            typeof(FrameworkElement),
+            new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(russian.IetfLanguageTag)));
     }
 
     private static string GetDatabasePath()
