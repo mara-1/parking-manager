@@ -17,7 +17,7 @@ public class CategoryRepository : ICategoryRepository
         return _dbContext.Categories.AsEnumerable().OrderBy(c => c.Category).ToList();
     }
 
-    public CategoryCapacity? Get(SpotCategory category)
+    public CategoryCapacity? Find(SpotCategory category)
     {
         return _dbContext.Categories.Find(category);
     }

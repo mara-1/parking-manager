@@ -14,6 +14,10 @@ public interface IParkingService
 
     ParkingSession RegisterExit(int sessionId);
 
+    // Сумма к оплате: для завершённой стоянки — зафиксированная при выезде,
+    // для активной — по действующему тарифу на текущий момент.
+    decimal CalculateAmount(ParkingSession session);
+
     // История: стоянки с въездом в периоде [from, to), включая ещё не завершённые.
-    IReadOnlyList<ParkingSession> GetHistory(DateTime from, DateTime to, string carNumberPart);
+    IReadOnlyList<ParkingSession> GetHistory(DateTime from, DateTime until, string carNumberPart);
 }

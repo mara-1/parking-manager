@@ -16,6 +16,8 @@ public class ParkingDbContext : DbContext
 
     public DbSet<ParkingSession> Sessions => Set<ParkingSession>();
 
+    public DbSet<Tariff> Tariffs => Set<Tariff>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -24,6 +26,9 @@ public class ParkingDbContext : DbContext
 
         modelBuilder.Entity<CategoryCapacity>().HasKey(c => c.Category);
         modelBuilder.Entity<CategoryCapacity>().Property(c => c.Category).HasConversion<string>();
+
+        modelBuilder.Entity<Tariff>().HasKey(t => t.Category);
+        modelBuilder.Entity<Tariff>().Property(t => t.Category).HasConversion<string>();
 
         var session = modelBuilder.Entity<ParkingSession>();
         session.Property(s => s.Category).HasConversion<string>();
