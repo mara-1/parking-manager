@@ -20,12 +20,15 @@ public class MainViewModelTests
         var categories = new FakeCategoryRepository(regular: 3, disabled: 1);
         var tariffs = new FakeTariffRepository(regular: 60m, disabled: 0m);
         var bookings = new FakeBookingRepository();
-        var service = new ParkingService(categories, new FakeSessionRepository(), tariffs, bookings, _clock);
+        var sessions = new FakeSessionRepository();
+        var service = new ParkingService(categories, sessions, tariffs, bookings, _clock);
+        var reports = new ReportsViewModel(new ReportService(sessions, bookings, _clock), new FakeReportExporter(), new FakeSaveFileDialog(null), _clock);
         _viewModel = new MainViewModel(
             _authService,
             service,
             new SettingsService(categories, tariffs, service),
             new BookingService(bookings, service, _clock),
+            reports,
             _clock);
     }
 
