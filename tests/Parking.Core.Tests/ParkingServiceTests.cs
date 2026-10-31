@@ -215,4 +215,27 @@ public class ParkingServiceTests
         Assert.Equal(120m, later);
         Assert.Null(session.Amount);
     }
+
+    [Fact]
+    public void RegisterEntry_UnknownCategory_Throws()
+    {
+        var error = Assert.Throws<ParkingOperationException>(() => _service.RegisterEntry("А123ВС73", (SpotCategory)7));
+
+        Assert.Equal("Категория мест не настроена.", error.Message);
+        Assert.Empty(_sessions.All);
+    }
+
+    [Fact]
+    [Trait("Task", "8")]
+    public void CalculateAmount_CategoryWithoutTariff_IsZero()
+    {
+        var session = new ParkingSession
+        {
+            CarNumber = "А123ВС73",
+            Category = (SpotCategory)7,
+            EntryTime = new DateTime(2026, 10, 24, 8, 0, 0),
+        };
+
+        Assert.Equal(0m, _service.CalculateAmount(session));
+    }
 }

@@ -63,12 +63,20 @@ def linter_metrics(build_log):
     return {"warnings_total": len(unique), "warnings_by_group": dict(sorted(groups.items()))}
 
 
+def is_generated(filename):
+    """Код, созданный при сборке (папка obj: XAML, регулярные выражения), в метрики не входит."""
+    path = (filename or "").replace("\\", "/")
+    return "/obj/" in path or path.endswith(".g.cs")
+
+
 def complexity_metrics(raw_cobertura_files):
-    """Цикломатическая сложность методов из отчётов coverlet (без дублей)."""
+    """Цикломатическая сложность методов из отчётов coverlet (без дублей и без сгенерированного кода)."""
     methods = {}
     for path in raw_cobertura_files:
         root = ET.parse(path).getroot()
         for cls in root.iter("class"):
+            if is_generated(cls.get("filename")):
+                continue
             for m in cls.iter("method"):
                 c = m.get("complexity")
                 if c is None:
@@ -77,12 +85,18 @@ def complexity_metrics(raw_cobertura_files):
                 methods[key] = max(methods.get(key, 0), float(c))
     values = list(methods.values())
     if not values:
-        return {"complexity_max": None, "complexity_avg": None, "methods_over_10": None, "methods_total": 0}
+        return {"complexity_max": None, "complexity_avg": None, "methods_over_10": None,
+                "methods_total": 0, "complex_methods": []}
+    complex_methods = sorted(
+        ({"method": f"{cls.split('.')[-1]}.{name}", "complexity": int(c)}
+         for (cls, name, _), c in methods.items() if c > 10),
+        key=lambda m: (-m["complexity"], m["method"]))
     return {
         "complexity_max": int(max(values)),
         "complexity_avg": round(mean(values), 2),
         "methods_over_10": sum(v > 10 for v in values),
         "methods_total": len(values),
+        "complex_methods": complex_methods,
     }
 
 
@@ -236,6 +250,9 @@ def to_markdown(m):
     lines = [f"## Метрики качества — {m['stage']} ({m['ref']}, {m['collected_at']})", "",
              "| Группа | Метрика | Значение |", "|---|---|---|"]
     lines += [f"| {g} | {n} | {v} |" for g, n, v in rows]
+    if m.get("complex_methods"):
+        lines += ["", "### Методы со сложностью > 10", "", "| Метод | Сложность |", "|---|---:|"]
+        lines += [f"| {c['method']} | {c['complexity']} |" for c in m["complex_methods"]]
     return "\n".join(lines) + "\n"
 
 

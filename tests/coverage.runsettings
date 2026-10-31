@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Настройки сбора покрытия (coverlet). Из покрытия и метрики сложности
+     исключается код, написанный не вручную: файлы, сгенерированные при сборке
+     (папка obj: XAML, регулярные выражения), и код с атрибутами
+     GeneratedCode / CompilerGenerated / ExcludeFromCodeCoverage. -->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <ExcludeByFile>**/obj/**/*.cs</ExcludeByFile>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

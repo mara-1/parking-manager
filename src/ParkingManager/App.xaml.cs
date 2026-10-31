@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Windows;
 using Parking.Core;
@@ -7,6 +8,7 @@ using ParkingManager.Views;
 
 namespace ParkingManager;
 
+[ExcludeFromCodeCoverage(Justification = "Запуск приложения и окон: проверяется UI-тестами (FlaUI), покрытие которых не собирается.")]
 public partial class App : Application
 {
     // Переменная окружения с путём к файлу базы данных. Используется
