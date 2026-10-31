@@ -220,7 +220,7 @@ public sealed class ReportExporter : IReportExporter
 
             foreach (var row in data.Rows)
             {
-                for (var i = 0; i < row.Count; i++)
+                for (var i = 0; i < row.Length; i++)
                 {
                     Align(BodyCell(table.Cell()), i).Text(row[i]);
                 }
@@ -228,38 +228,35 @@ public sealed class ReportExporter : IReportExporter
         });
     }
 
-    private static IReadOnlyList<IReadOnlyList<string>> SummaryRows(PeriodReport report)
+    private static List<string[]> SummaryRows(PeriodReport report)
     {
         var rows = SummaryNumbers(report)
-            .Select(n => Row(n.Label, Count(n.Value)))
+            .Select(n => new[] { n.Label, Count(n.Value) })
             .ToList();
-        rows.Add(Row("Выручка", ReportText.Money(report.Revenue)));
-        rows.Add(Row("Средняя длительность стоянки", ReportText.Duration(report.AverageStay)));
+        rows.Add(new[] { "Выручка", ReportText.Money(report.Revenue) });
+        rows.Add(new[] { "Средняя длительность стоянки", ReportText.Duration(report.AverageStay) });
         return rows;
     }
 
-    private static IReadOnlyList<IReadOnlyList<string>> CategoryRows(PeriodReport report)
+    private static List<string[]> CategoryRows(PeriodReport report)
     {
         return report.Categories
-            .Select(c => Row(
+            .Select(c => new[]
+            {
                 c.Category.ToDisplayName(),
                 Count(c.Sessions),
                 Count(c.Finished),
                 ReportText.Money(c.Revenue),
-                ReportText.Duration(c.AverageStay)))
+                ReportText.Duration(c.AverageStay),
+            })
             .ToList();
     }
 
-    private static IReadOnlyList<IReadOnlyList<string>> DayRows(PeriodReport report)
+    private static List<string[]> DayRows(PeriodReport report)
     {
         return report.Days
-            .Select(d => Row(ReportText.Day(d.Date), Count(d.Entries), ReportText.Money(d.Revenue)))
+            .Select(d => new[] { ReportText.Day(d.Date), Count(d.Entries), ReportText.Money(d.Revenue) })
             .ToList();
-    }
-
-    private static IReadOnlyList<string> Row(params string[] cells)
-    {
-        return cells;
     }
 
     private static IContainer Align(IContainer cell, int column)
@@ -290,7 +287,7 @@ public sealed class ReportExporter : IReportExporter
     // Данные таблицы PDF: относительные ширины столбцов, заголовки (могут отсутствовать) и строки.
     private sealed class PdfTable
     {
-        public PdfTable(IReadOnlyList<float> widths, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows)
+        public PdfTable(IReadOnlyList<float> widths, IReadOnlyList<string> headers, IReadOnlyList<string[]> rows)
         {
             Widths = widths;
             Headers = headers;
@@ -301,6 +298,6 @@ public sealed class ReportExporter : IReportExporter
 
         public IReadOnlyList<string> Headers { get; }
 
-        public IReadOnlyList<IReadOnlyList<string>> Rows { get; }
+        public IReadOnlyList<string[]> Rows { get; }
     }
 }
