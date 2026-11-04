@@ -11,11 +11,12 @@ public sealed class DatabaseInitializerTests : IDisposable
     private readonly SqliteTestDatabase _database = new SqliteTestDatabase();
 
     [Fact]
-    public void Initialize_EmptyDatabase_SeedsDemoOperatorAndCapacities()
+    public void Initialize_EmptyDatabase_SeedsCapacitiesWithoutOperator()
     {
         DatabaseInitializer.Initialize(_database.Context);
 
-        Assert.Single(_database.Context.Operators);
+        // Оператор регистрируется сам при первом запуске, заранее учётная запись не создаётся.
+        Assert.Empty(_database.Context.Operators);
         var categories = _database.Context.Categories.ToList();
         Assert.Equal(DatabaseInitializer.RegularCapacity, categories.Single(c => c.Category == SpotCategory.Regular).Capacity);
         Assert.Equal(DatabaseInitializer.DisabledCapacity, categories.Single(c => c.Category == SpotCategory.Disabled).Capacity);
@@ -39,8 +40,9 @@ public sealed class DatabaseInitializerTests : IDisposable
         DatabaseInitializer.Initialize(_database.Context);
         DatabaseInitializer.Initialize(_database.Context);
 
-        Assert.Single(_database.Context.Operators);
+        Assert.Empty(_database.Context.Operators);
         Assert.Equal(2, _database.Context.Categories.Count());
+        Assert.Equal(2, _database.Context.Tariffs.Count());
     }
 
     public void Dispose()

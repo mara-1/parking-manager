@@ -14,17 +14,20 @@ public sealed class CoreServicesTests : IDisposable
     [Fact]
     [Trait("Task", "5")]
     [Trait("Task", "7")]
-    public void Create_NewDatabase_AllowsDemoLoginEntryAndExitAcrossRestarts()
+    public void Create_NewDatabase_RegistersOperatorAndKeepsDataAcrossRestarts()
     {
         int sessionId;
         using (var core = CoreServices.Create(_databasePath))
         {
-            Assert.True(core.Auth.Login(DatabaseInitializer.DemoLogin, DatabaseInitializer.DemoPassword));
+            Assert.False(core.Auth.HasOperator);
+            core.Auth.RegisterOperator("Аринина Марина", "operator", "secret1");
             sessionId = core.Parking.RegisterEntry("А123ВС73", SpotCategory.Regular).Id;
         }
 
         using (var reopened = CoreServices.Create(_databasePath))
         {
+            Assert.True(reopened.Auth.HasOperator);
+            Assert.True(reopened.Auth.Login("operator", "secret1"));
             Assert.Equal("А123ВС73", Assert.Single(reopened.Parking.GetActiveSessions(string.Empty)).CarNumber);
             Assert.Equal(DatabaseInitializer.RegularCapacity - 1, reopened.Parking.GetOccupancy().Single(o => o.Category == SpotCategory.Regular).Free);
             Assert.Equal(60m, reopened.Parking.RegisterExit(sessionId).Amount);
