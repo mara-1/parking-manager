@@ -16,13 +16,15 @@ public sealed class RepositoryTests : IDisposable
 
     [Fact]
     [Trait("Task", "5")]
-    public void OperatorRepository_FindByLogin_ReturnsSeededOperator()
+    public void OperatorRepository_AddAndFindByLogin_PersistsOperator()
     {
         var repository = new OperatorRepository(_database.Context);
+        Assert.False(repository.Any());
 
-        var account = repository.FindByLogin(DatabaseInitializer.DemoLogin);
+        repository.Add(new OperatorAccount { Login = "operator", FullName = "Аринина Марина", PasswordHash = "hash", PasswordSalt = "salt" });
 
-        Assert.NotNull(account);
+        Assert.True(repository.Any());
+        Assert.Equal("Аринина Марина", repository.FindByLogin("operator")!.FullName);
         Assert.Null(repository.FindByLogin("unknown"));
     }
 

@@ -12,6 +12,11 @@ public sealed class FakeAuthService : IAuthService
 
     public OperatorAccount? CurrentOperator { get; private set; }
 
+    public bool HasOperator { get; set; } = true;
+
+    // Сообщение, с которым RegisterOperator отклоняет регистрацию; null — регистрация успешна.
+    public string? RegistrationError { get; set; }
+
     public bool Login(string login, string password)
     {
         if (login == ValidLogin && password == ValidPassword)
@@ -22,6 +27,17 @@ public sealed class FakeAuthService : IAuthService
 
         CurrentOperator = null;
         return false;
+    }
+
+    public void RegisterOperator(string fullName, string login, string password)
+    {
+        if (RegistrationError is not null)
+        {
+            throw new ParkingOperationException(RegistrationError);
+        }
+
+        HasOperator = true;
+        CurrentOperator = new OperatorAccount { Id = 1, Login = login, FullName = fullName };
     }
 
     public void Logout()

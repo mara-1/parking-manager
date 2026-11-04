@@ -19,9 +19,6 @@
 
     <TextBlock AutomationProperties.AutomationId="ErrorText" Text="{Binding ErrorMessage}" Foreground="Firebrick" TextWrapping="Wrap" Margin="0,0,0,12" />
 
-    <DockPanel>
-      <TextBlock DockPanel.Dock="Left" Text="Демо: admin / admin123" Foreground="Gray" VerticalAlignment="Center" />
-      <Button AutomationProperties.AutomationId="LoginButton" Content="Войти" Command="{Binding LoginCommand}" IsDefault="True" Padding="16,6" HorizontalAlignment="Right" />
-    </DockPanel>
+    <Button AutomationProperties.AutomationId="LoginButton" Content="Войти" Command="{Binding LoginCommand}" IsDefault="True" Padding="16,6" HorizontalAlignment="Right" />
   </StackPanel>
 </Window>

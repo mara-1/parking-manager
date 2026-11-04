@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Markup;
 using Parking.Core;
+using Parking.Core.Services;
 using ParkingManager.Services;
 using ParkingManager.ViewModels;
 using ParkingManager.Views;
@@ -31,8 +32,7 @@ public partial class App : Application
 
         _core = CoreServices.Create(GetDatabasePath());
 
-        var loginWindow = new LoginWindow(new LoginViewModel(_core.Auth));
-        if (loginWindow.ShowDialog() != true)
+        if (!SignIn(_core.Auth))
         {
             Shutdown();
             return;
@@ -50,6 +50,16 @@ public partial class App : Application
     {
         _core?.Dispose();
         base.OnExit(e);
+    }
+
+    // При первом запуске оператора ещё нет — показывается окно регистрации,
+    // после которой вход выполняется сразу. Иначе — обычное окно входа.
+    private static bool SignIn(IAuthService auth)
+    {
+        Window window = auth.HasOperator
+            ? new LoginWindow(new LoginViewModel(auth))
+            : new RegistrationWindow(new RegistrationViewModel(auth));
+        return window.ShowDialog() == true;
     }
 
     // Даты и числа в окнах (в том числе в календаре DatePicker) показываются

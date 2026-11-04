@@ -11,7 +11,7 @@ public class ParkingUiTests
     public void MainWindow_AfterLogin_ShowsCapacityPerCategory()
     {
         using var session = new AppSession();
-        var parking = session.LoginAsDemoOperator();
+        var parking = session.RegisterOperator();
 
         UiHelpers.WaitForText(parking, "RegularFreeText", $"{AppSession.RegularCapacity}");
         UiHelpers.WaitForText(parking, "DisabledFreeText", $"{AppSession.DisabledCapacity}");
@@ -23,7 +23,7 @@ public class ParkingUiTests
     public void RegisterEntryAndExit_UpdatesCounters()
     {
         using var session = new AppSession();
-        var parking = session.LoginAsDemoOperator();
+        var parking = session.RegisterOperator();
 
         // Въезд: оператор вводит номер и регистрирует въезд на обычное место.
         UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
@@ -48,7 +48,7 @@ public class ParkingUiTests
     public void RegisterEntry_DisabledCategory_TakesDisabledPlace()
     {
         using var session = new AppSession();
-        var parking = session.LoginAsDemoOperator();
+        var parking = session.RegisterOperator();
 
         UiHelpers.Select(parking, "DisabledCategoryRadio");
         UiHelpers.SetText(parking, "CarNumberBox", "М808АА73");
@@ -64,7 +64,7 @@ public class ParkingUiTests
     public void RegisterEntry_SameCarTwice_ShowsError()
     {
         using var session = new AppSession();
-        var parking = session.LoginAsDemoOperator();
+        var parking = session.RegisterOperator();
 
         UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
         UiHelpers.ClickWhenEnabled(parking, "EntryButton");
@@ -83,7 +83,7 @@ public class ParkingUiTests
     public void Search_FindsCarAndRegistersItsExit()
     {
         using var session = new AppSession();
-        var parking = session.LoginAsDemoOperator();
+        var parking = session.RegisterOperator();
         UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
         UiHelpers.ClickWhenEnabled(parking, "EntryButton");
         UiHelpers.WaitForText(parking, "ActiveCountText", "1");
@@ -104,7 +104,7 @@ public class ParkingUiTests
     public void SchemeTab_AfterEntry_OpensOccupancyScheme()
     {
         using var session = new AppSession();
-        var parking = session.LoginAsDemoOperator();
+        var parking = session.RegisterOperator();
         UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
         UiHelpers.ClickWhenEnabled(parking, "EntryButton");
         UiHelpers.WaitForText(parking, "ActiveCountText", "1");
@@ -120,7 +120,7 @@ public class ParkingUiTests
     public void HistoryTab_AfterExit_ShowsFinishedSession()
     {
         using var session = new AppSession();
-        var parking = session.LoginAsDemoOperator();
+        var parking = session.RegisterOperator();
         UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
         UiHelpers.ClickWhenEnabled(parking, "EntryButton");
         UiHelpers.WaitForText(parking, "ActiveCountText", "1");
@@ -139,7 +139,7 @@ public class ParkingUiTests
     public void ReportsTab_AfterExit_ShowsTotalsAndEnablesExport()
     {
         using var session = new AppSession();
-        var parking = session.LoginAsDemoOperator();
+        var parking = session.RegisterOperator();
         UiHelpers.SetText(parking, "CarNumberBox", CarNumber);
         UiHelpers.ClickWhenEnabled(parking, "EntryButton");
         UiHelpers.WaitForText(parking, "ActiveCountText", "1");
@@ -161,7 +161,7 @@ public class ParkingUiTests
     public void SettingsTab_ChecksDisabledShareAndSavesCapacity()
     {
         using var session = new AppSession();
-        var parking = session.LoginAsDemoOperator();
+        var parking = session.RegisterOperator();
         UiHelpers.Select(parking, "SettingsTab");
 
         // 450 + 10 мест: мест для инвалидов меньше 10 % — сохранение запрещено.
@@ -181,7 +181,7 @@ public class ParkingUiTests
     public void Booking_HoldsPlaceAndBookedCarEnters()
     {
         using var session = new AppSession();
-        var parking = session.LoginAsDemoOperator();
+        var parking = session.RegisterOperator();
         var now = DateTime.Now;
         var arrival = now.AddMinutes(30).Date == now.Date ? now.AddMinutes(30) : now.Date.AddHours(23).AddMinutes(59);
         var arrivalText = arrival.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture);
