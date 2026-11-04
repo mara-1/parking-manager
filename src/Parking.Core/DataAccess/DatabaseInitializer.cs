@@ -1,13 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Parking.Core.Models;
-using Parking.Core.Services;
 
 namespace Parking.Core.DataAccess;
 
 public static class DatabaseInitializer
 {
-    public const string DemoLogin = "admin";
-    public const string DemoPassword = "admin123";
     public const int RegularCapacity = 450;
     public const int DisabledCapacity = 50;
     public const decimal RegularPricePerHour = 60m;
@@ -21,8 +18,9 @@ public static class DatabaseInitializer
     {
         ArgumentNullException.ThrowIfNull(dbContext);
 
-        // До выпуска 1.0 база содержит только демонстрационные данные, поэтому
-        // база старой версии схемы пересоздаётся, а не переносится миграциями.
+        // На этапах разработки (до выпуска 1.0) схема менялась на каждом этапе,
+        // а база содержала только тестовые данные, поэтому база старой версии
+        // пересоздаётся. Дальнейшие изменения схемы потребуют миграций EF Core.
         if (HasTables(dbContext) && GetSchemaVersion(dbContext) != SchemaVersion)
         {
             dbContext.Database.EnsureDeleted();
@@ -49,18 +47,8 @@ public static class DatabaseInitializer
 
     private static void Seed(ParkingDbContext dbContext)
     {
-        if (!dbContext.Operators.Any())
-        {
-            var (hash, salt) = PasswordHasher.Hash(DemoPassword);
-            dbContext.Operators.Add(new OperatorAccount
-            {
-                Login = DemoLogin,
-                FullName = "Демо-оператор",
-                PasswordHash = hash,
-                PasswordSalt = salt,
-            });
-        }
-
+        // Учётная запись оператора не создаётся заранее: оператор
+        // регистрируется сам при первом запуске программы.
         if (!dbContext.Categories.Any())
         {
             dbContext.Categories.Add(new CategoryCapacity { Category = SpotCategory.Regular, Capacity = RegularCapacity });

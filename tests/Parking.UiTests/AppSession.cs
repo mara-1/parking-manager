@@ -11,19 +11,22 @@ namespace Parking.UiTests;
 // Запущенный экземпляр приложения. Каждый тест получает собственную
 // пустую бд во временном каталоге, поэтому тесты независимы
 // друг от друга и не затрагивают рабочую базу оператора.
+// В пустой базе нет оператора, поэтому приложение открывается
+// окном регистрации — как при первом запуске на рабочей станции.
 public sealed class AppSession : IDisposable
 {
+    public const string RegistrationWindowTitle = "Регистрация оператора — ParkingManager";
     public const string LoginWindowTitle = "Вход — ParkingManager";
     public const string ParkingWindowTitle = "ParkingManager — учёт парковки";
-    public const string DemoLogin = "admin";
-    public const string DemoPassword = "admin123";
-    public const string DemoOperatorName = "Демо-оператор";
+    public const string OperatorLogin = "operator";
+    public const string OperatorPassword = "secret1";
+    public const string OperatorName = "Иванова Анна Сергеевна";
     public const int RegularCapacity = 450;
     public const int DisabledCapacity = 50;
 
     private readonly string _dataFolder;
     private readonly UIA3Automation _automation;
-    private readonly Application _application;
+    private Application _application;
 
     public AppSession()
     {
@@ -36,15 +39,8 @@ public sealed class AppSession : IDisposable
         _dataFolder = Path.Combine(Path.GetTempPath(), "ParkingManager.UiTests", $"{Guid.NewGuid():N}");
         Directory.CreateDirectory(_dataFolder);
 
-        var startInfo = new ProcessStartInfo(appPath)
-        {
-            UseShellExecute = false,
-            WorkingDirectory = Path.GetDirectoryName(appPath) ?? string.Empty,
-        };
-        startInfo.Environment["PARKING_DB_PATH"] = Path.Combine(_dataFolder, "parking.db");
-
         _automation = new UIA3Automation();
-        _application = Application.Launch(startInfo);
+        _application = Launch();
     }
 
     public Window WaitForWindow(string title)
@@ -90,10 +86,44 @@ public sealed class AppSession : IDisposable
         return window;
     }
 
-    // Вход демо-оператором. Возвращает главное окно со схемой парковки.
-    public Window LoginAsDemoOperator()
+    // Заполняет окно регистрации и нажимает «Зарегистрироваться».
+    // Возвращает окно регистрации.
+    public Window SubmitRegistration(string confirmPassword, string? screenshotName = null)
     {
-        SubmitLogin(DemoLogin, DemoPassword);
+        var window = WaitForWindow(RegistrationWindowTitle);
+        UiHelpers.SetText(window, "FullNameBox", OperatorName);
+        UiHelpers.SetText(window, "NewLoginBox", OperatorLogin);
+        UiHelpers.SetText(window, "NewPasswordInput", OperatorPassword);
+        UiHelpers.SetText(window, "ConfirmPasswordInput", confirmPassword);
+
+        if (screenshotName is not null)
+        {
+            UiHelpers.Screenshot(window, screenshotName);
+        }
+
+        UiHelpers.ClickWhenEnabled(window, "RegisterButton");
+        return window;
+    }
+
+    // Регистрация оператора при первом запуске. Возвращает главное окно со схемой парковки.
+    public Window RegisterOperator()
+    {
+        SubmitRegistration(OperatorPassword);
+        return WaitForParkingWindow();
+    }
+
+    // Закрывает приложение и запускает его снова с той же базой данных.
+    public void Restart()
+    {
+        _application.Close();
+        Retry.WhileFalse(() => _application.HasExited, UiTestSettings.Timeout, UiTestSettings.PollInterval, ignoreException: true);
+        _application.Dispose();
+        _application = Launch();
+    }
+
+    // Ждёт главное окно и разворачивает его.
+    public Window WaitForParkingWindow()
+    {
         var parkingWindow = WaitForWindow(ParkingWindowTitle);
         UiHelpers.WaitForText(parkingWindow, "RegularFreeText", $"{RegularCapacity}");
 
@@ -122,6 +152,18 @@ public sealed class AppSession : IDisposable
         catch (UnauthorizedAccessException)
         {
         }
+    }
+
+    private Application Launch()
+    {
+        var appPath = UiTestSettings.AppPath;
+        var startInfo = new ProcessStartInfo(appPath)
+        {
+            UseShellExecute = false,
+            WorkingDirectory = Path.GetDirectoryName(appPath) ?? string.Empty,
+        };
+        startInfo.Environment["PARKING_DB_PATH"] = Path.Combine(_dataFolder, "parking.db");
+        return Application.Launch(startInfo);
     }
 
     private Window? FindWindow(string title)

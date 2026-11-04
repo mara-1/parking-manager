@@ -1,0 +1,31 @@
+<Window x:Class="ParkingManager.Views.RegistrationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Регистрация оператора — ParkingManager"
+        Width="400"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        FocusManager.FocusedElement="{Binding ElementName=FullNameBox}">
+  <StackPanel Margin="24">
+    <TextBlock Text="Учёт автомобильной парковки" FontSize="18" FontWeight="SemiBold" />
+    <TextBlock Text="Первый запуск: создайте учётную запись оператора. Эти логин и пароль понадобятся при каждом входе в программу."
+               Foreground="Gray" TextWrapping="Wrap" Margin="0,4,0,16" />
+
+    <TextBlock Text="ФИО оператора" />
+    <TextBox x:Name="FullNameBox" AutomationProperties.AutomationId="FullNameBox" Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,12" Padding="4" />
+
+    <TextBlock Text="Логин" />
+    <TextBox AutomationProperties.AutomationId="NewLoginBox" Text="{Binding Login, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,12" Padding="4" />
+
+    <TextBlock Text="Пароль (не менее 6 символов)" />
+    <PasswordBox x:Name="PasswordInput" AutomationProperties.AutomationId="NewPasswordInput" PasswordChanged="OnPasswordChanged" Margin="0,4,0,12" Padding="4" />
+
+    <TextBlock Text="Повторите пароль" />
+    <PasswordBox x:Name="ConfirmPasswordInput" AutomationProperties.AutomationId="ConfirmPasswordInput" PasswordChanged="OnConfirmPasswordChanged" Margin="0,4,0,12" Padding="4" />
+
+    <TextBlock AutomationProperties.AutomationId="RegistrationErrorText" Text="{Binding ErrorMessage}" Foreground="Firebrick" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+    <Button AutomationProperties.AutomationId="RegisterButton" Content="Зарегистрироваться" Command="{Binding RegisterCommand}" IsDefault="True" Padding="16,6" HorizontalAlignment="Right" />
+  </StackPanel>
+</Window>
